@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HỆ THỐNG HOÀN TIỀN VÉ MÁY BAY 247</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuwNk_hjnRhT3uh9_xhhDN7cPrbFWdzOQ",
+            authDomain: "htve-219c6.firebaseapp.com",
+            databaseURL: "https://htve-219c6-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "htve-219c6",
+            storageBucket: "htve-219c6.firebasestorage.app",
+            messagingSenderId: "894265287302",
+            appId: "1:894265287302:web:a57783debcd30e0dea2707",
+            measurementId: "G-Y8S6E8KMY5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        window.updateUserCloud = (id, up) => update(ref(db, 'users/' + id), up);
+        window.saveUserToCloud = (u) => set(ref(db, 'users/' + u.id), u);
+        window.saveOrderToCloud = (o) => { const r = push(ref(db, 'orders')); o.id = r.key; return set(r, o); };
+        window.saveLogToCloud = (l) => { const r = push(ref(db, 'login_logs')); l.id = r.key; return set(r, l); };
+        window.updateOrderCloud = (id, up) => update(ref(db, 'orders/' + id), up);
+        window.deleteUserCloud = (id) => remove(ref(db, 'users/' + id));
+        window.deleteOrderCloud = (id) => remove(ref(db, 'orders/' + id));
+
+        window.curU = null; window.uStore = []; window.dStore = []; window.lStore = [];
+
+        onValue(ref(db, 'users'), (snapshot) => {
+            const data = snapshot.val();
+            window.uStore = data ? Object.keys(data).map(k => ({...data[k], id: k})) : [];
+            
+            if (window.uStore.length === 0) {
+                const defaultAdmin = {
+                    id: "admin_chinh",
+                    name: "QUẢN TRỊ VIÊN",
+                    user: "admin",
+                    pass: "123456",
+                    role: "ADMIN",
+                    canWithdraw: true,
+                    isFrozen: false,
+                    needVerify: false,
+                    verifyMsg: "",
+                    successBill: null
+                };
+                window.saveUserToCloud(defaultAdmin);
+                return;
+            }
+
+            if(!window.curU) {
+                checkSession();
+            } else {
+                const updatedMe = window.uStore.find(x => x && x.id === window.curU.id);
+                if(updatedMe) {
+                    if(updatedMe.pass !== window.curU.pass) {
+                        localStorage.clear();
+                        window.location.reload();
+                        return;
+                    }
+                    window.curU = updatedMe;
+                }
+            }
+            refresh();
+        });
+
+        onValue(ref(db, 'orders'), (snapshot) => {
+            const data = snapshot.val();
+            window.dStore = data ? Object.keys(data).map(k => ({...data[k], id: k})).reverse() : [];
+            if(window.curU) refresh();
+        });
+
+        onValue(ref(db, 'login_logs'), (snapshot) => {
+            const data = snapshot.val();
+            window.lStore = data ? Object.values(data).reverse() : [];
+            if(window.curU && window.curU.role === 'ADMIN') refresh();
+        });
+    </script>
+
+    <style>
+        * { font-family: 'Inter', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #f8fafc; margin: 0; color: #1e293b; overflow-x: hidden; }
+        
+        .sidebar { background-color: #0f172a; width: 250px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 5000; height: 100vh; position: fixed; left: 0; top: 0; border-right: 1px solid #1e293b; }
+        .sidebar.collapsed { transform: translateX(-250px); }
+        .main-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; display: flex; flex-direction: column; min-height: 100vh; margin-left: 250px; }
+        .main-content.full { margin-left: 0; }
+        @media (max-width: 1024px) { .main-content { margin-left: 0; } .sidebar:not(.collapsed) + .overlay { display: block; } }
+        
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 4000; backdrop-filter: blur(8px); }
+        
+        .table-responsive { width: 100%; overflow-x: auto; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1200px; }
+        th, td { border-bottom: 1px solid #f1f5f9; padding: 16px 14px; font-size: 13px; text-align: left; transition: background-color 0.2s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        th { background-color: #f8fafc; font-weight: 700; text-transform: uppercase; color: #64748b; font-size: 11px; tracking: 0.05em; border-bottom: 2px solid #e2e8f0; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        .sidebar-item { color: #94a3b8; padding: 14px 24px; cursor: pointer; display: flex; align-items: center; white-space: nowrap; border-left: 4px solid transparent; font-size: 14px; font-weight: 500; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-item:hover { background: #1e293b; color: #f8fafc; padding-left: 28px; }
+        .sidebar-item.active { background: #1e293b; color: #38bdf8; border-left-color: #38bdf8; font-weight: 600; padding-left: 28px; }
+        
+        .tab-content { display: none; padding: 24px; height: 100%; overflow-y: auto; }
+        .tab-content.active { display: block; animation: tabFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes tabFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.4); z-index: 6000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); }
+        .modal.active { display: flex; }
+        .modal-content { background: #ffffff; border-radius: 20px; width: 100%; max-width: 480px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15); border: 1px solid #e2e8f0; transform: scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .modal.active .modal-content { transform: scale(1); opacity: 1; }
+        
+        .input-pro { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; font-size: 14px; font-weight: 500; transition: all 0.25s ease; background-color: #ffffff; color: #0f172a; }
+        .input-pro:focus { border-color: #0284c7; box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12); }
+        .label-small { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; tracking: 0.05em; }
+        
+        @keyframes floatEffect { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .floating-icon { animation: floatEffect 3s ease-in-out infinite; }
+
+        .col-user { width: 120px; } .col-name { width: 160px; } .col-bank { width: 120px; } 
+        .col-acc { width: 150px; } .col-code { width: 130px; } .col-money { width: 130px; } 
+        .col-time { width: 160px; } .col-status { width: 120px; } .col-action { width: 180px; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebarOverlay" class="overlay" onclick="toggleSidebar()"></div>
+
+    <div id="loginPage" class="fixed inset-0 flex items-center justify-center p-4 z-[9999] bg-[#f1f5f9]">
+        <div class="bg-white/90 backdrop-blur-md p-8 md:p-10 rounded-3xl shadow-2xl w-full max-w-[440px] border border-white/60 relative animate__animated animate__fadeInUp animate__fast">
+            <div class="w-16 h-16 bg-sky-50 text-sky-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4 border border-sky-100/80 shadow-sm floating-icon">
+                <i class="fas fa-plane-departure"></i>
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight text-center">Login Account</h1>
+            <p class="text-slate-400 text-xs mt-1 mb-6 font-bold uppercase tracking-widest text-center">Hệ thống hoàn tiền vé máy bay</p>
+            <div id="loginError" class="hidden mb-4 p-3 bg-rose-50 text-rose-600 text-xs font-bold rounded-xl border border-rose-200 uppercase tracking-wide text-center animate__animated animate__headShake"></div>
+            
+            <div class="mb-4 text-left">
+                <label class="label-small">Tên đăng nhập</label>
+                <input type="text" id="lUser" placeholder="Nhập tài khoản" class="input-pro uppercase" autocomplete="off">
+            </div>
+            <div class="mb-6 text-left">
+                <label class="label-small">Mật khẩu</label>
+                <input type="password" id="lPass" placeholder="Nhập mật khẩu" class="input-pro" autocomplete="off">
+            </div>
+            
+            <button onclick="handleLogin()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-xl font-bold uppercase transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98]">Đăng Nhập Hệ Thống</button>
+            <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider"><i class="fas fa-headset text-sky-500 mr-1.5 animate-pulse"></i> KHÁCH HÀNG QUÊN MẬT KHẨU LIÊN HỆ NHÂN VIÊN HỖ TRỢ FANGAPE</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainUI" style="display:none;" class="flex w-full min-h-screen overflow-hidden">
+        <div class="sidebar collapsed" id="sidebar">
+            <div class="h-16 bg-[#0f172a] border-b border-slate-800 flex items-center justify-center text-sky-400 font-extrabold text-sm tracking-widest uppercase">HỆ THỐNG HOÀN TIỀN</div>
+            <div class="p-4 flex items-center gap-3 border-b border-slate-800/60 bg-slate-900/40">
+                <img id="topAvatar" src="" class="w-10 h-10 rounded-full bg-white border border-slate-700 shadow-sm">
+                <div class="text-slate-200 text-[11px] uppercase font-bold">
+                    <p id="topName" class="truncate max-w-[140px] text-slate-100 font-semibold text-sm"></p>
+                    <p class="text-emerald-400 italic flex items-center gap-1.5 mt-0.5 font-normal">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span> 
+                        Trực tuyến
+                    </p>
+                </div>
+            </div>
+            <nav id="mainNav" class="flex-1 mt-3"></nav>
+        </div>
+
+        <div class="main-content full" id="mainContent">
+            <header class="h-16 bg-white border-b border-slate-200/80 flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm">
+                <button onclick="toggleSidebar()" class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all"><i class="fas fa-bars text-lg"></i></button>
+                <div class="flex items-center gap-4">
+                    <span id="topClockHeader" class="font-mono font-bold text-xs bg-slate-100 text-slate-700 px-3.5 py-1.5 rounded-full tracking-wider">00:00:00</span>
+                    <button onclick="handleLogout()" class="bg-gradient-to-r from-red-500 to-rose-600 text-white px-4 py-2 rounded-xl text-xs font-bold uppercase shadow-sm transition-all active:scale-[0.97] flex items-center gap-2">
+                        <i class="fas fa-power-off text-xs"></i> <span>Đăng xuất</span>
+                    </button>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden bg-[#f8fafc]">
+                <div id="a-dash" class="tab-content">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group">
+                            <div><p class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Thành viên</p><h3 id="stat-users" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3></div>
+                            <div class="text-sky-500 bg-sky-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-users"></i></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group">
+                            <div><p class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Tổng lệnh</p><h3 id="stat-orders" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3></div>
+                            <div class="text-slate-500 bg-slate-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-file-invoice"></i></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group">
+                            <div><p class="text-amber-600 text-[11px] font-bold uppercase tracking-wider">Lệnh chờ</p><h3 id="stat-pending" class="text-2xl font-extrabold text-amber-600 mt-1 animate-pulse">0</h3></div>
+                            <div class="text-amber-500 bg-amber-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-clock"></i></div>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group">
+                            <div><p class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Đã hoàn hoàn tất</p><h3 id="stat-money" class="text-xl font-extrabold text-emerald-600 mt-1">0 đ</h3></div>
+                            <div class="text-emerald-500 bg-emerald-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-check-circle"></i></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Trạng thái dữ liệu tự động</p>
+                        <div class="flex flex-wrap items-center gap-6 text-xs font-bold uppercase">
+                            <span class="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span> Đang chờ duyệt: <span id="lbl-pnd-count" class="font-extrabold text-sm ml-0.5">0</span></span>
+                            <span class="flex items-center gap-2 text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Đã duyệt hoàn: <span id="lbl-app-count" class="font-extrabold text-sm ml-0.5">0</span></span>
+                            <span class="flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-rose-500 rounded-full"></span> Đơn từ chối: <span id="lbl-rej-count" class="font-extrabold text-sm ml-0.5">0</span></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="u-dash" class="tab-content active">
+                    <div class="max-w-3xl mx-auto space-y-5">
+                        <div id="statusArea" class="space-y-4">
+                            <div id="verifyBox" class="hidden bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl shadow-sm">
+                                <h3 class="text-rose-700 font-bold uppercase text-xs mb-2 flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> YÊU CẦU XÁC MINH HỒ SƠ</h3>
+                                <div id="verifyContent" class="text-slate-700 font-semibold text-sm whitespace-pre-wrap leading-relaxed"></div>
+                            </div>
+                            <div id="waitingBox" class="hidden bg-sky-50 border-l-4 border-sky-500 p-5 rounded-2xl shadow-sm animate-pulse">
+                                <div class="flex items-center text-sky-800 font-bold uppercase text-[11px] tracking-wider"><i class="fas fa-circle-notch fa-spin mr-3 text-sm"></i> Đang chờ lệnh duyệt hoàn tiền từ bộ phận kế toán...</div>
+                            </div>
+                            <div id="successBillBox" class="hidden bg-emerald-50 border-l-4 border-emerald-600 p-5 rounded-2xl shadow-sm text-left">
+                                <h3 class="text-emerald-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-check-double text-lg"></i> BIÊN LAI HOÀN TIỀN THÀNH CÔNG</h3>
+                                <div id="billContent" class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-3 shadow-inner border border-slate-100/50"></div>
+                                <button onclick="clearBill()" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99]">Xác nhận đã nhận đủ tiền hoàn</button>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-slate-200/60 text-center">
+                            <h2 id="dynamicGreeting" class="text-xs text-slate-400 font-bold uppercase mb-2 tracking-wide leading-relaxed px-4">...</h2>
+                            <p id="dashName" class="text-2xl font-black text-sky-600 mb-4 uppercase tracking-wider"></p>
+                            <div class="inline-block bg-slate-50/80 px-6 py-4 rounded-2xl border border-slate-100 shadow-inner mb-8 text-center">
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">THÔNG TIN TRUY CẬP VỊ TRÍ</p>
+                                <p class="text-slate-700 text-xs font-bold mb-1"><i class="fas fa-shield-halved text-emerald-500 mr-2"></i> <span id="userLocation">Đang kết nối Cloud...</span></p>
+                                <p class="text-slate-400 text-[11px] font-semibold"><i class="far fa-clock mr-1.5 text-sky-400"></i> <span id="fullDateTime">...</span></p>
+                            </div>
+                            <div>
+                                <button id="mainWithdrawBtn" onclick="openWithdrawModal()" class="w-full sm:w-auto bg-gradient-to-r from-sky-500 to-blue-600 text-white px-12 py-4 rounded-full font-bold text-xs shadow-md active:scale-95 transition-all uppercase tracking-widest">GỬI YÊU CẦU HOÀN TIỀN VÉ</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="a-users" class="tab-content">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">
+                            <div class="relative flex-1 max-w-md">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                                <input type="text" id="searchUserInp" oninput="refresh()" placeholder="Tìm thành viên (Tên, Tài khoản)..." class="input-pro !pl-9 text-xs">
+                            </div>
+                            <select id="filterUserRole" onchange="refresh()" class="input-pro text-xs !w-full sm:!w-44 h-[44px]">
+                                <option value="ALL">Tất cả quyền hạn</option>
+                                <option value="USER">Quyền USER</option>
+                                <option value="ADMIN">Quyền ADMIN</option>
+                            </select>
+                        </div>
+                        <button onclick="openUMFolder('add')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 h-[44px] rounded-xl shadow-sm text-xs transition font-extrabold flex items-center justify-center gap-1.5 w-full md:w-auto shrink-0"><i class="fas fa-plus"></i> TẠO TÀI KHOẢN</button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden">
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="col-name">Họ tên</th><th class="col-user">Tài khoản</th><th class="col-status">Quyền</th><th class="col-status">Mật khẩu</th><th class="col-status text-center">Trạng Thái</th><th class="col-status text-center">Quyền Rút</th><th class="col-action text-center">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="u-list-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="history-view" class="tab-content">
+                    <div id="adminFilterOrderArea" class="hidden bg-white rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden mb-6 p-4 flex flex-col sm:flex-row gap-4 items-center">
+                        <div class="relative flex-1 w-full">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                            <input type="text" id="searchOrderInp" oninput="refresh()" placeholder="Tìm lệnh rút (Tên, STK, Ngân hàng, Mã đơn vé)..." class="input-pro !pl-9 text-xs">
+                        </div>
+                        <select id="filterOrderStatus" onchange="refresh()" class="input-pro text-xs !w-full sm:!w-48 h-[44px]">
+                            <option value="ALL">Tất cả trạng thái</option>
+                            <option value="ĐANG CHỜ">ĐANG CHỜ DUYỆT</option>
+                            <option value="ĐÃ DUYỆT">ĐÃ HOÀN THÀNH</option>
+                            <option value="TỪ CHỐI">ĐƠN BỊ TỪ CHỐI</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden">
+                        <div class="table-responsive">
+                            <table id="historyTable"></table>
+                            <table><tbody id="table-body" class="divide-y divide-slate-100"></tbody></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="a-logs" class="tab-content">
+                    <div class="bg-white rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden">
+                        <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold uppercase text-xs text-slate-600 tracking-wider">Nhật ký IP hoạt động</div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr><th class="col-user">User</th><th class="col-acc">Địa chỉ IP</th><th class="col-name">Vị trí</th><th class="col-status">Thiết bị</th><th class="col-time">Thời gian</th></tr>
+                                </thead>
+                                <tbody id="l-list-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="a-settings" class="tab-content">
+                    <div class="max-w-md mx-auto mt-4 bg-white p-6 md:p-8 rounded-2xl border border-slate-200/50 shadow-sm animate__animated animate__fadeIn animate__faster">
+                        <h2 class="text-center font-extrabold uppercase text-base text-slate-700 mb-6 tracking-wider">Đổi Mật Khẩu Bảo Mật</h2>
+                        <div class="mb-4"><label class="label-small">Mật khẩu hiện tại</label><input type="password" id="oldPass" class="input-pro" placeholder="••••••••"></div>
+                        <div class="mb-4"><label class="label-small">Mật khẩu mới</label><input type="password" id="newPass" class="input-pro" placeholder="Tối thiểu 4 ký tự"></div>
+                        <div class="mb-6"><label class="label-small">Xác nhận mật khẩu mới</label><input type="password" id="reNewPass" class="input-pro" placeholder="••••••••"></div>
+                        <button onclick="handleChangePass()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-xl font-bold uppercase shadow transition active:scale-[0.99]">Cập nhật mật khẩu mới</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="withdrawFolder" class="modal" onclick="if(event.target==this) closeModal('withdrawFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('withdrawFolder')">&times;</span><div class="p-6 space-y-4 text-left">
+        <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-paper-plane text-sky-500 mr-2"></i> Tạo đơn yêu cầu hoàn tiền</h3>
+        <div><label class="label-small">Họ tên chủ tài khoản</label><input type="text" id="u-name-in" oncopy="return false;" onpaste="return false;" class="input-pro uppercase" autocomplete="off"></div>
+        <div><label class="label-small">Ngân hàng nhận tiền</label><input type="text" id="u-bank" oncopy="return false;" onpaste="return false;" class="input-pro" autocomplete="off"></div>
+        <div><label class="label-small">Số tài khoản ngân hàng</label><input type="text" id="u-acc" oncopy="return false;" onpaste="return false;" class="input-pro" autocomplete="off"></div>
+        <div><label class="label-small">Mã đơn hoàn tiền</label><input type="text" id="u-code" oncopy="return false;" onpaste="return false;" class="input-pro uppercase" autocomplete="off"></div>
+        <div><label class="label-small">Số tiền</label><input type="number" id="u-money" oncopy="return false;" onpaste="return false;" class="input-pro text-rose-600 font-extrabold text-base" autocomplete="off"></div>
+        <button onclick="userSubmitConfirm()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-xl font-bold uppercase shadow mt-2 transition">GỬI YÊU CẦU DUYỆT</button>
+    </div></div></div>
+
+    <div id="userFolder" class="modal" onclick="if(event.target==this) closeModal('userFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('userFolder')">&times;</span><div class="p-6 space-y-4 text-left"><input type="hidden" id="mId">
+        <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-user-shield text-emerald-500 mr-2"></i> Thông tin thành viên</h3>
+        <div><label class="label-small">Họ và Tên</label><input type="text" id="mName" class="input-pro uppercase"></div>
+        <div><label class="label-small">Tài khoản đăng nhập</label><input type="text" id="mUser" class="input-pro"></div>
+        <div><label class="label-small">Mật khẩu quản lý</label><input type="text" id="mPass" class="input-pro font-bold text-sky-600"></div>
+        <div><label class="label-small">Phân quyền</label><select id="mRole" class="input-pro h-[46px]"><option value="USER">USER (Thành viên)</option><option value="ADMIN">ADMIN (Quản trị viên)</option></select></div>
+        <button onclick="saveUserSubmit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">LƯU CẤP PHÁT</button>
+    </div></div></div>
+
+    <div id="editOrderFolder" class="modal" onclick="if(event.target==this) closeModal('editOrderFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('editOrderFolder')">&times;</span><div class="p-6 space-y-4 text-left"><input type="hidden" id="eoId">
+        <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-edit text-sky-500 mr-2"></i> Chỉnh sửa thông tin đơn hoàn</h3>
+        <div><label class="label-small">Chủ tài khoản</label><input type="text" id="eoOwner" class="input-pro uppercase"></div>
+        <div><label class="label-small">Ngân hàng</label><input type="text" id="eoBank" class="input-pro"></div>
+        <div><label class="label-small">Số tài khoản</label><input type="text" id="eoAcc" class="input-pro"></div>
+        <div><label class="label-small">Mã đơn vé</label><input type="text" id="eoCode" class="input-pro uppercase"></div>
+        <div><label class="label-small">Số tiền lệnh</label><input type="number" id="eoMoney" class="input-pro text-rose-600 font-extrabold"></div>
+        <button onclick="saveOrderInfoOnly()" class="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">CẬP NHẬT ĐƠN HÀNG</button>
+    </div></div></div>
+
+    <div id="billFolder" class="modal" onclick="if(event.target==this) closeModal('billFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('billFolder')">&times;</span><div class="p-6 space-y-3 text-left"><input type="hidden" id="billId">
+        <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-file-invoice-dollar text-emerald-600 mr-2"></i> Biên lai chuyển khoản thành công</h3>
+        <div><label class="label-small">Chủ TK thụ hưởng</label><input type="text" id="bName" class="input-pro uppercase"></div>
+        <div><label class="label-small">Ngân hàng</label><input type="text" id="bBank" class="input-pro"></div>
+        <div><label class="label-small">Số tài khoản</label><input type="text" id="bAcc" class="input-pro"></div>
+        <div><label class="label-small">Số tiền chuyển duyệt</label><input type="text" id="bMoney" class="input-pro font-black text-emerald-600"></div>
+        <div><label class="label-small">Thông điệp đính kèm</label><input type="text" id="bNote" class="input-pro" value="Hoàn tiền thành công"></div>
+        <button onclick="confirmBillSubmit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">XUẤT BILL THÀNH CÔNG</button>
+    </div></div></div>
+
+    <div id="orderFolder" class="modal" onclick="if(event.target==this) closeModal('orderFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('orderFolder')">&times;</span><div class="p-6 space-y-4 text-left"><input type="hidden" id="oId"><input type="hidden" id="oStatus">
+        <label id="orderTitle" class="label-small font-extrabold text-sm border-b pb-3 text-slate-700">PHẢN HỒI LỖI GIAO DỊCH</label>
+        <textarea id="oReason" class="w-full border border-slate-200 p-3 rounded-xl font-semibold text-sm bg-slate-50 focus:bg-white outline-none focus:border-amber-400 transition" rows="4"></textarea>
+        <button onclick="confirmOrderSubmit()" class="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl uppercase shadow transition">GỬI THÔNG BÁO TỚI USER</button>
+    </div></div></div>
+
+    <script>
+        window.getVNTime = () => {
+            const options = { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric', hour12: false };
+            const formatter = new Intl.DateTimeFormat('vi-VN', options);
+            const parts = formatter.formatToParts(new Date());
+            const d = {}; parts.forEach(p => d[p.type] = p.value);
+            return `${d.hour}:${d.minute} ${d.day}/${d.month}/${d.year}`;
+        };
+
+        function toggleSidebar() { 
+            document.getElementById('sidebar').classList.toggle('collapsed'); 
+            document.getElementById('mainContent').classList.toggle('full'); 
+        }
+
+        window.showToast = (msg, type = 'success') => {
+            const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 2500, timerProgressBar: true });
+            Toast.fire({ icon: type, title: msg });
+        };
+        
+        function checkSession() { 
+            const ss = localStorage.getItem('HT247_SESSION'); 
+            if(ss && window.uStore.length > 0) { 
+                const u = window.uStore.find(x => x && x.user && x.user.toLowerCase() === ss.toLowerCase()); 
+                if(u && u.isFrozen !== true) { 
+                    window.curU = u; 
+                    document.getElementById('loginPage').style.display='none'; 
+                    document.getElementById('mainUI').style.display='flex'; 
+                    renderUI(); 
+                } 
+            } 
+        }
+        
+        async function handleLogin() {
+            const errBox = document.getElementById('loginError'); errBox.classList.add('hidden'); 
+            const uI = document.getElementById('lUser').value.trim().toLowerCase(), pI = document.getElementById('lPass').value.trim();
+            const acc = window.uStore.find(x => x && x.user && x.user.toLowerCase() === uI);
+            if(!acc || acc.pass !== pI) { 
+                errBox.innerText = "Tài khoản hoặc mật khẩu không chính xác!"; 
+                errBox.classList.remove('hidden'); 
+                errBox.classList.add('animate__animated', 'animate__headShake');
+                setTimeout(() => errBox.classList.remove('animate__animated', 'animate__headShake'), 600);
+                return; 
+            }
+            if(acc.isFrozen === true) { errBox.innerText = "Tài khoản của bạn tạm thời bị đóng băng!"; errBox.classList.remove('hidden'); return; }
+            try {
+                const res = await fetch('https://ipapi.co/json/'); const data = await res.json();
+                await window.saveLogToCloud({ name: acc.name, ip: data.ip, city: data.city, device: /Android|iPhone/i.test(navigator.userAgent) ? "Mobile" : "PC", time: window.getVNTime() });
+                if(document.getElementById('userLocation')) document.getElementById('userLocation').innerText = data.city + ", " + data.country_name;
+            } catch(e) {}
+            window.curU = acc; localStorage.setItem('HT247_SESSION', acc.user); window.showToast("Đăng nhập thành công!");
+            document.getElementById('loginPage').style.display='none'; document.getElementById('mainUI').style.display='flex'; renderUI();
+        }
+
+        function handleLogout() { 
+            Swal.fire({ title: 'Xác nhận thoát?', text: "Bạn có chắc chắn muốn đăng xuất?", icon: 'question', showCancelButton: true }).then((r) => { if(r.isConfirmed){ localStorage.clear(); window.location.reload(); } }); 
+        }
+
+        function renderUI() {
+            document.getElementById('topName').innerText = window.curU.name; document.getElementById('dashName').innerText = window.curU.name; 
+            document.getElementById('topAvatar').src = `https://ui-avatars.com/api/?name=${window.curU.name}&background=0ea5e9&color=fff`;
+            const nav = document.getElementById('mainNav'), hh = document.getElementById('historyTable');
+            if(window.curU.role === 'ADMIN') {
+                nav.innerHTML = `<div onclick="switchTab('a-dash')" class="sidebar-item active"><i class="fas fa-chart-pie mr-3 w-4 text-center"></i>Bảng điều khiển</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-list-check mr-3 w-4 text-center"></i>Duyệt lệnh hệ thống</div><div onclick="switchTab('a-users')" class="sidebar-item"><i class="fas fa-user-gear mr-3 w-4 text-center"></i>Quản lý thành viên</div><div onclick="switchTab('a-logs')" class="sidebar-item"><i class="fas fa-network-wired mr-3 w-4 text-center"></i>Nhật ký kết nối</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-shield-halved mr-3 w-4 text-center"></i>Đổi mật khẩu</div>`;
+                hh.innerHTML = `<thead><tr><th class="col-user">Khởi tạo</th><th class="col-name">Chủ tài khoản</th><th class="col-bank">Ngân hàng</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn vé</th><th class="col-money">Số tiền</th><th class="col-time">Thời gian gửi</th><th class="col-status">Trạng thái</th><th class="col-action text-center">Hành động</th></tr></thead>`;
+                document.getElementById('adminFilterOrderArea').classList.remove('hidden');
+            } else {
+                nav.innerHTML = `<div onclick="switchTab('u-dash')" class="sidebar-item active"><i class="fas fa-home mr-3 w-4 text-center"></i>Trang tổng quan</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center"></i>Lịch sử lệnh gửi</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Cấu hình bảo mật</div>`;
+                hh.innerHTML = `<thead><tr><th class="col-name">Chủ TK thụ hưởng</th><th class="col-bank">Ngân hàng nhận</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đặt chỗ</th><th class="col-money">Số tiền hoàn</th><th class="col-time">Thời gian khởi tạo</th><th class="col-status">Trạng thái</th><th class="col-reason">Phản hồi hệ thống</th></tr></thead>`;
+                document.getElementById('adminFilterOrderArea').classList.add('hidden');
+            }
+            refresh();
+        }
+
+        function refresh() {
+            if(!window.curU) return;
+            
+            const sUserKey = document.getElementById('searchUserInp') ? document.getElementById('searchUserInp').value.trim().toLowerCase() : '';
+            const fUserRole = document.getElementById('filterUserRole') ? document.getElementById('filterUserRole').value : 'ALL';
+            
+            const sOrderKey = document.getElementById('searchOrderInp') ? document.getElementById('searchOrderInp').value.trim().toLowerCase() : '';
+            const fOrderStatus = document.getElementById('filterOrderStatus') ? document.getElementById('filterOrderStatus').value : 'ALL';
+
+            if(window.curU.role === 'ADMIN') {
+                const pndCount = window.dStore.filter(o => o.status === 'ĐANG CHỜ').length;
+                const appCount = window.dStore.filter(o => o.status === 'ĐÃ DUYỆT').length;
+                const rejCount = window.dStore.filter(o => o.status === 'TỪ CHỐI').length;
+
+                document.getElementById('stat-users').innerText = window.uStore.length;
+                document.getElementById('stat-orders').innerText = window.dStore.length;
+                document.getElementById('stat-pending').innerText = pndCount;
+                
+                if(document.getElementById('lbl-pnd-count')) document.getElementById('lbl-pnd-count').innerText = pndCount;
+                if(document.getElementById('lbl-app-count')) document.getElementById('lbl-app-count').innerText = appCount;
+                if(document.getElementById('lbl-rej-count')) document.getElementById('lbl-rej-count').innerText = rejCount;
+
+                let filteredUsers = window.uStore.filter(u => u && u.id);
+                if(fUserRole !== 'ALL') {
+                    filteredUsers = filteredUsers.filter(u => u.role === fUserRole);
+                }
+                if(sUserKey !== '') {
+                    filteredUsers = filteredUsers.filter(u => 
+                        (u.name && u.name.toLowerCase().includes(sUserKey)) || 
+                        (u.user && u.user.toLowerCase().includes(sUserKey))
+                    );
+                }
+
+                if(filteredUsers.length === 0) {
+                    document.getElementById('u-list-body').innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-user-slash mr-2 text-base"></i> Không tìm thấy thành viên phù hợp</td></tr>`;
+                } else {
+                    document.getElementById('u-list-body').innerHTML = filteredUsers.map(u => `<tr>
+                        <td class="col-name font-bold text-slate-700">${u.name}</td><td class="col-user text-slate-500 font-semibold">${u.user}</td><td class="col-status"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] ${u.role==='ADMIN'?'bg-purple-50 text-purple-600 border border-purple-100':'bg-sky-50 text-sky-600 border border-sky-100'}">${u.role}</span></td><td class="col-status font-mono text-slate-600 font-medium">${u.pass}</td>
+                        <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {isFrozen: !${u.isFrozen}}); window.showToast('Cập nhật trạng thái thành công')" class="text-2xl transition-transform duration-200 active:scale-90 ${u.isFrozen?'text-rose-500':'text-emerald-500'}"><i class="fas ${u.isFrozen?'fa-toggle-off':'fa-toggle-on'}"></i></button></td>
+                        <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {canWithdraw: !${u.canWithdraw}}); window.showToast('Cập nhật quyền rút tiền thành công')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all duration-200 active:scale-95 ${u.canWithdraw?'text-emerald-600 border-emerald-200 bg-emerald-50':'text-amber-600 border-amber-200 bg-amber-50'}">${u.canWithdraw?'Mở Khóa':'Đang Khóa'}</button></td>
+                        <td class="col-action text-center space-x-2"><button onclick="openUMFolder('editU', '${u.id}')" class="text-amber-600 hover:text-amber-700 font-bold text-xs uppercase hover:underline">Sửa</button><button onclick="delU('${u.id}')" class="text-rose-500 hover:text-rose-600 font-bold text-xs uppercase hover:underline">Xóa</button></td>
+                    </tr>`).join('');
+                }
+
+                if(document.getElementById('l-list-body')) document.getElementById('l-list-body').innerHTML = window.lStore.map(l => `<tr><td class="col-user font-bold text-slate-700">${l.name}</td><td class="col-acc font-mono text-sky-600 font-semibold">${l.ip}</td><td class="col-bank text-slate-600">${l.city}</td><td class="col-status text-slate-500 font-medium">${l.device}</td><td class="col-time text-slate-400 font-medium">${l.time}</td></tr>`).join('');
+            }
+            
+            if(window.curU.role === 'USER') {
+                const vBox = document.getElementById('verifyBox'), wBox = document.getElementById('waitingBox'), sBox = document.getElementById('successBillBox'), btn = document.getElementById('mainWithdrawBtn');
+                vBox.classList.add('hidden'); wBox.classList.add('hidden'); sBox.classList.add('hidden'); btn.style.opacity = '1';
+                if(window.curU.successBill) { 
+                    sBox.classList.remove('hidden'); const b = window.curU.successBill; 
+                    document.getElementById('billContent').innerHTML = `<div class="text-center border-b border-emerald-100 pb-3 mb-3 text-emerald-800 font-extrabold text-sm tracking-wide">THÔNG TIN GIAO DỊCH HOÀN TẤT</div><div class="grid grid-cols-3 gap-y-2.5 py-1 text-slate-600"><div class="text-slate-400 font-bold">CHỦ TÀI KHOẢN:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800 tracking-wide">${b.name}</div><div class="text-slate-400 font-bold">SỐ TÀI KHOẢN:</div><div class="col-span-2 text-right font-mono text-sky-600 font-black text-xs">${b.acc}</div><div class="text-gray-400 font-bold">NGÂN HÀNG:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800">${b.bank || 'N/A'}</div><div class="text-slate-400 font-bold">SỐ TIỀN HOÀN:</div><div class="col-span-2 text-right text-rose-600 font-black text-sm">${b.money} VNĐ</div><div class="text-slate-400 font-bold">NỘI DUNG:</div><div class="col-span-2 text-right italic font-semibold text-slate-500">${b.note}</div></div>`; 
+                } else if(window.curU.needVerify && window.curU.verifyMsg) { vBox.classList.remove('hidden'); document.getElementById('verifyContent').innerText = window.curU.verifyMsg; btn.style.opacity = '0.5'; }
+                else if(window.curU.canWithdraw === false) { wBox.classList.remove('hidden'); btn.style.opacity = '0.5'; }
+            }
+
+            const tb = document.getElementById('table-body');
+            let ds = (window.curU.role === 'ADMIN') ? window.dStore : window.dStore.filter(x => x && x.userId === window.curU.id);
+            
+            if(window.curU.role === 'ADMIN') {
+                if(fOrderStatus !== 'ALL') {
+                    ds = ds.filter(i => i.status === fOrderStatus);
+                }
+                if(sOrderKey !== '') {
+                    ds = ds.filter(i => 
+                        (i.owner && i.owner.toLowerCase().includes(sOrderKey)) || 
+                        (i.acc && i.acc.toLowerCase().includes(sOrderKey)) || 
+                        (i.bank && i.bank.toLowerCase().includes(sOrderKey)) || 
+                        (i.code && i.code.toLowerCase().includes(sOrderKey)) ||
+                        (i.creatorUser && i.creatorUser.toLowerCase().includes(sOrderKey))
+                    );
+                }
+            }
+
+            if(ds.filter(i => i.owner).length === 0) {
+                const spanCols = (window.curU.role === 'ADMIN') ? 9 : 8;
+                tb.innerHTML = `<tr><td colspan="${spanCols}" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-folder-open mr-2 text-base"></i> Không có dữ liệu lệnh hoàn tiền phù hợp</td></tr>`;
+            } else {
+                tb.innerHTML = ds.filter(i => i.owner).map(i => {
+                    if (window.curU.role === 'ADMIN') {
+                        return `<tr><td class="col-user text-indigo-600 font-bold">${i.creatorUser || 'Khách'}</td><td class="col-name uppercase font-bold text-slate-700">${i.owner}</td><td class="col-bank text-slate-600">${i.bank}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs">${i.acc}</td><td class="col-code uppercase font-bold text-slate-700">${i.code}</td><td class="col-money text-rose-600 font-black">${Number(i.money || 0).toLocaleString()}đ</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500 animate-pulse':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-action text-center space-x-1"><button onclick="openUMFolder('openBill','${i.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Duyệt</button><button onclick="openUMFolder('openO','${i.id}','TỪ CHỐI')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Từ Chối</button><button onclick="duplicateOrder('${i.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 transition active:scale-90"><i class="fas fa-copy"></i></button><button onclick="delO('${i.id}')" class="text-rose-500 hover:text-rose-600 px-1 transition active:scale-90"><i class="fas fa-trash-alt"></i></button><i onclick="openUMFolder('editEO','${i.id}')" class="fas fa-edit text-sky-400 hover:text-sky-500 cursor-pointer ml-1 text-xs transition active:scale-90"></i></td></tr>`;
+                    } else {
+                        let v = (i.status !== 'ĐANG CHỜ');
+                        return `<tr><td class="col-name uppercase font-bold text-slate-700">${v?i.owner:'***'}</td><td class="col-bank text-slate-600">${v?i.bank:'***'}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs">${v?i.acc:'***'}</td><td class="col-code uppercase font-semibold text-slate-700">${v?i.code:'***'}</td><td class="col-money text-rose-600 font-black">${v?Number(i.money || 0).toLocaleString()+'đ':'***'}</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-reason italic text-slate-400 font-medium">${i.reason}</td></tr>`;
+                    }
+                }).join('');
+            }
+        }
+
+        window.handleChangePass = async () => {
+            const oldP = document.getElementById('oldPass').value.trim();
+            const newP = document.getElementById('newPass').value.trim();
+            const reNewP = document.getElementById('reNewPass').value.trim();
+
+            if (!oldP || !newP || !reNewP) return Swal.fire("Lỗi", "Vui lòng nhập đủ thông tin!", "error");
+            if (oldP !== window.curU.pass) return Swal.fire("Lỗi", "Mật khẩu cũ không chính xác!", "error");
+            if (newP !== reNewP) return Swal.fire("Lỗi", "Xác nhận mật khẩu mới không khớp!", "error");
+            if (newP.length < 4) return Swal.fire("Lỗi", "Mật khẩu mới phải có tối thiểu 4 ký tự!", "error");
+
+            try {
+                await window.updateUserCloud(window.curU.id, { pass: newP });
+                Swal.fire({ title: "Thành công!", text: "Đã cập nhật mật khẩu hệ thống. Vui lòng đăng nhập lại!", icon: "success" }).then(() => {
+                    localStorage.clear();
+                    window.location.reload();
+                });
+            } catch(e) { Swal.fire("Lỗi", "Không thể kết nối cập nhật dữ liệu!", "error"); }
+        };
+
+        window.duplicateOrder = async (id) => {
+            if(confirm("Xác nhận nhân đôi yêu cầu lệnh giao dịch này?")) {
+                const i = window.dStore.find(x => x && x.id === id); if(!i) return;
+                const newOrder = {...i, status: 'ĐANG CHỜ', reason: 'Đang xét duyệt...', time: window.getVNTime()}; 
+                delete newOrder.id; await window.saveOrderToCloud(newOrder); window.showToast("Nhân đôi lệnh thành công!");
+            }
+        };
+
+        window.userSubmitConfirm = async () => {
+            const n=document.getElementById('u-name-in').value, b=document.getElementById('u-bank').value, a=document.getElementById('u-acc').value, c=document.getElementById('u-code').value, m=document.getElementById('u-money').value;
+            if(!n||!c||!m) return Swal.fire("Lỗi", "Vui lòng điền đủ các mục thông tin bắt buộc!", "error");
+            await window.updateUserCloud(window.curU.id, { canWithdraw: false, needVerify: false, successBill: null });
+            await window.saveOrderToCloud({userId:window.curU.id, creatorUser: window.curU.user, owner:n.toUpperCase(), bank:b, acc:a, code:c.toUpperCase(), money:Number(m), status:'ĐANG CHỜ', reason:'Đang xét duyệt...', time:window.getVNTime()});
+            ['u-name-in','u-bank','u-acc','u-code','u-money'].forEach(id => document.getElementById(id).value = '');
+            closeModal('withdrawFolder'); window.showToast("Gửi yêu cầu hoàn tiền thành công!");
+        };
+
+        window.openWithdrawModal = () => { 
+            if(window.curU.canWithdraw === false) return Swal.fire({ title: 'Hệ thống đang xử lý...', text: 'Lệnh giao dịch trước đó đang nằm trong hàng duyệt, vui lòng chờ kế toán hoàn tất!', icon: 'info' }); 
+            openModal('withdrawFolder'); 
+        };
+        
+        window.clearBill = () => { window.updateUserCloud(window.curU.id, { successBill: null }); window.showToast("Xác nhận thành công!"); };
+
+        window.saveUserSubmit = async () => {
+            const id = document.getElementById('mId').value, n = document.getElementById('mName').value.trim(), u = document.getElementById('mUser').value.trim().toLowerCase(), p = document.getElementById('mPass').value.trim(), r = document.getElementById('mRole').value;
+            if(!n || !u || !p) return Swal.fire("Lỗi", "Vui lòng nhập đầy đủ thông tin tài khoản!", "error");
+            const all = window.uStore || [];
+            const isDup = all.find(x => x && x.user && x.user.toLowerCase() === u && x.id !== id);
+            if (isDup) return Swal.fire("Lỗi", "Tên tài khoản đăng nhập này đã tồn tại!", "error");
+            const ex = all.find(x => x && x.id === id) || {};
+            const data = { id: id || 'u_'+Date.now(), name: n.toUpperCase(), user: u, pass: p, role: r, canWithdraw: (ex.canWithdraw !== undefined) ? ex.canWithdraw : true, isFrozen: (ex.isFrozen !== undefined) ? ex.isFrozen : false, needVerify: (ex.needVerify !== undefined) ? ex.needVerify : false, verifyMsg: ex.verifyMsg || '', successBill: ex.successBill || null };
+            await window.saveUserToCloud(data); closeModal('userFolder'); window.showToast("Cập nhật thành viên thành công!");
+        };
+
+        window.confirmOrderSubmit = async () => { 
+            const id = document.getElementById('oId').value, s = document.getElementById('oStatus').value, r = document.getElementById('oReason').value;
+            const ord = window.dStore.find(x=>x && x.id===id); 
+            await window.updateOrderCloud(id, {status: s, reason: r});
+            if(s==='TỪ CHỐI' && ord) await window.updateUserCloud(ord.userId, {needVerify:true, canWithdraw:false, verifyMsg:r, successBill: null});
+            closeModal('orderFolder'); window.showToast("Đã gửi phản hồi đơn hàng!");
+        };
+
+        window.confirmBillSubmit = async () => {
+            const id = document.getElementById('billId').value, ord = window.dStore.find(x=>x && x.id===id);
+            const bill = { name: document.getElementById('bName').value, bank: document.getElementById('bBank').value, acc: document.getElementById('bAcc').value, money: document.getElementById('bMoney').value, note: document.getElementById('bNote').value };
+            await window.updateOrderCloud(id, { status: 'ĐÃ DUYỆT', reason: 'Thành công.' });
+            if(ord) await window.updateUserCloud(ord.userId, { successBill: bill, canWithdraw: false, needVerify: false, verifyMsg: '' });
+            closeModal('billFolder'); window.showToast("Phê duyệt biên lai thành công!");
+        };
+
+        window.saveOrderInfoOnly = async () => {
+            const id = document.getElementById('eoId').value;
+            const up = { owner: document.getElementById('eoOwner').value.toUpperCase(), bank: document.getElementById('eoBank').value, acc: document.getElementById('eoAcc').value, code: document.getElementById('eoCode').value.toUpperCase(), money: Number(document.getElementById('eoMoney').value) };
+            await window.updateOrderCloud(id, up); closeModal('editOrderFolder'); window.showToast("Cập nhật dữ liệu đơn hoàn tất!");
+        };
+
+        window.delO = (id) => { if(confirm("Xóa bỏ vĩnh viễn dữ liệu đơn giao dịch này?")) { window.deleteOrderCloud(id); window.showToast("Đã xóa lệnh hoàn tiền!", "error"); } };
+        window.delU = (id) => { if(confirm("Xóa bỏ tài khoản thành viên này khỏi hệ thống?")) { window.deleteUserCloud(id); window.showToast("Đã xóa tài khoản thành công!", "error"); } };
+        
+        window.openUMFolder = (act, id, s) => {
+            if(act==='add') { document.getElementById('mId').value=''; ['mName','mUser','mPass'].forEach(k=>document.getElementById(k).value=''); openModal('userFolder'); }
+            if(act==='editU') { const u=window.uStore.find(x=>x && x.id===id); document.getElementById('mId').value=u.id; document.getElementById('mName').value=u.name; document.getElementById('mUser').value=u.user; document.getElementById('mPass').value=u.pass; document.getElementById('mRole').value=u.role; openModal('userFolder'); }
+            if(act==='editEO') { const i=window.dStore.find(x=>x && x.id===id); document.getElementById('eoId').value=i.id; document.getElementById('eoOwner').value=i.owner; document.getElementById('eoBank').value=i.bank; document.getElementById('eoAcc').value=i.acc; document.getElementById('eoCode').value=i.code; document.getElementById('eoMoney').value=i.money; openModal('editOrderFolder'); }
+            if(act==='openO') { document.getElementById('oId').value=id; document.getElementById('oStatus').value=s; document.getElementById('orderTitle').innerText='PHẢN HỒI LỖI GIAO DỊCH'; document.getElementById('oReason').value='Ghi lý do từ chối giao dịch cụ thể tại đây...'; openModal('orderFolder'); }
+            if(act==='openBill') { const i=window.dStore.find(x=>x && x.id===id); document.getElementById('billId').value=id; document.getElementById('bName').value=i.owner; document.getElementById('bBank').value=i.bank; document.getElementById('bAcc').value=i.acc; document.getElementById('bMoney').value=Number(i.money || 0).toLocaleString(); document.getElementById('bNote').value="Hoàn tiền thành công"; openModal('billFolder'); }
+        };
+
+        window.switchTab = (id) => { 
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); 
+            document.getElementById(id).classList.add('active'); 
+            if(window.innerWidth <= 1024) toggleSidebar(); 
+        };
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        setInterval(() => { 
+            const now = new Date();
+            if(document.getElementById('dynamicGreeting')) document.getElementById('dynamicGreeting').innerText = "Kính chào Quý khách! Rất vui được hỗ trợ Quý khách trong ngày hôm nay. Chúc Quý khách một ngày làm việc hiệu quả!";
+            const timeStr = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(now);
+            const dateStr = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' }).format(now);
+            if(document.getElementById('fullDateTime')) document.getElementById('fullDateTime').innerText = dateStr + " | " + timeStr;
+            if(document.getElementById('topClockHeader')) document.getElementById('topClockHeader').innerText = timeStr; 
+        }, 1000);
+    </script>
+</body>
+</html>
