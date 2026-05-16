@@ -444,7 +444,7 @@
                 document.getElementById('adminFilterOrderArea').classList.remove('hidden');
             } else {
                 nav.innerHTML = `<div onclick="switchTab('u-dash')" class="sidebar-item active"><i class="fas fa-home mr-3 w-4 text-center"></i>Trang tổng quan</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center"></i>Lịch sử lệnh gửi</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Cấu hình bảo mật</div>`;
-                hh.innerHTML = `<thead><tr><th class="col-name">Chủ TK thụ hưởng</th><th class="col-bank">Ngân hàng nhận</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đặt chỗ</th><th class="col-money">Số tiền hoàn</th><th class="col-time">Thời gian khởi tạo</th><th class="col-status">Trạng thái</th><th class="col-reason">Phản hồi hệ thống</th></tr></thead>`;
+                hh.innerHTML = `<thead><tr><th class="col-name">Chủ TK thụ hưởng</th><th class="col-bank">Ngân hàng nhận</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền hoàn</th><th class="col-time">Thời gian khởi tạo</th><th class="col-status">Trạng thái</th><th class="col-reason">Phản hồi hệ thống</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.add('hidden');
             }
             refresh();
