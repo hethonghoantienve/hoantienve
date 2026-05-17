@@ -255,7 +255,7 @@
                             <h2 id="dynamicGreeting" class="text-xs text-slate-400 font-bold uppercase mb-2 tracking-wide leading-relaxed px-4">...</h2>
                             <p id="dashName" class="text-2xl font-black text-sky-600 mb-4 uppercase tracking-wider"></p>
                             <div class="inline-block bg-slate-50/80 px-6 py-4 rounded-2xl border border-slate-100 shadow-inner mb-8 text-center">
-                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Cơ sở dữ liệu đám mây</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Thông tin truy cập vị trí</p>
                                 <p class="text-slate-700 text-xs font-bold mb-1"><i class="fas fa-shield-halved text-emerald-500 mr-2"></i> <span id="userLocation">Đang kết nối Cloud...</span></p>
                                 <p class="text-slate-400 text-[11px] font-semibold"><i class="far fa-clock mr-1.5 text-sky-400"></i> <span id="fullDateTime">...</span></p>
                             </div>
@@ -435,9 +435,9 @@
             return `${d.hour}:${d.minute} ${d.day}/${d.month}/${d.year}`;
         };
 
-        function toggleSidebar() { 
-            document.getElementById('sidebar').classList.toggle('collapsed'); 
-            document.getElementById('mainContent').classList.toggle('full'); 
+        function toggleSidebar() { 
+            document.getElementById('sidebar').classList.toggle('collapsed'); 
+            document.getElementById('mainContent').classList.toggle('full'); 
         }
 
         window.showToast = (msg, type = 'success') => {
@@ -445,29 +445,29 @@
             Toast.fire({ icon: type, title: msg });
         };
         
-        function checkSession() { 
-            const ss = localStorage.getItem('HT247_SESSION'); 
-            if(ss && window.uStore.length > 0) { 
-                const u = window.uStore.find(x => x && x.user && x.user.toLowerCase() === ss.toLowerCase()); 
-                if(u && u.isFrozen !== true) { 
-                    window.curU = u; 
-                    document.getElementById('loginPage').style.display='none'; 
-                    document.getElementById('mainUI').style.display='flex'; 
-                    renderUI(); 
-                } 
-            } 
+        function checkSession() { 
+            const ss = localStorage.getItem('HT247_SESSION'); 
+            if(ss && window.uStore.length > 0) { 
+                const u = window.uStore.find(x => x && x.user && x.user.toLowerCase() === ss.toLowerCase()); 
+                if(u && u.isFrozen !== true) { 
+                    window.curU = u; 
+                    document.getElementById('loginPage').style.display='none'; 
+                    document.getElementById('mainUI').style.display='flex'; 
+                    renderUI(); 
+                } 
+            } 
         }
         
         async function handleLogin() {
-            const errBox = document.getElementById('loginError'); errBox.classList.add('hidden'); 
+            const errBox = document.getElementById('loginError'); errBox.classList.add('hidden'); 
             const uI = document.getElementById('lUser').value.trim().toLowerCase(), pI = document.getElementById('lPass').value.trim();
             const acc = window.uStore.find(x => x && x.user && x.user.toLowerCase() === uI);
-            if(!acc || acc.pass !== pI) { 
-                errBox.innerText = "Tài khoản hoặc mật khẩu không chính xác!"; 
-                errBox.classList.remove('hidden'); 
+            if(!acc || acc.pass !== pI) { 
+                errBox.innerText = "Tài khoản hoặc mật khẩu không chính xác!"; 
+                errBox.classList.remove('hidden'); 
                 errBox.classList.add('animate__animated', 'animate__headShake');
                 setTimeout(() => errBox.classList.remove('animate__animated', 'animate__headShake'), 600);
-                return; 
+                return; 
             }
             if(acc.isFrozen === true) { errBox.innerText = "Tài khoản của bạn tạm thời bị đóng băng!"; errBox.classList.remove('hidden'); return; }
             try {
@@ -479,16 +479,16 @@
             document.getElementById('loginPage').style.display='none'; document.getElementById('mainUI').style.display='flex'; renderUI();
         }
 
-        function handleLogout() { 
-            Swal.fire({ title: 'Xác nhận thoát?', text: "Bạn có chắc chắn muốn đăng xuất?", icon: 'question', showCancelButton: true }).then((r) => { if(r.isConfirmed){ localStorage.clear(); window.location.reload(); } }); 
+        function handleLogout() { 
+            Swal.fire({ title: 'Xác nhận thoát?', text: "Bạn có chắc chắn muốn đăng xuất?", icon: 'question', showCancelButton: true }).then((r) => { if(r.isConfirmed){ localStorage.clear(); window.location.reload(); } }); 
         }
 
         function renderUI() {
-            document.getElementById('topName').innerText = window.curU.name; document.getElementById('dashName').innerText = window.curU.name; 
+            document.getElementById('topName').innerText = window.curU.name; document.getElementById('dashName').innerText = window.curU.name; 
             document.getElementById('topAvatar').src = `https://ui-avatars.com/api/?name=${window.curU.name}&background=0ea5e9&color=fff`;
             const nav = document.getElementById('mainNav'), hh = document.getElementById('historyTable');
             if(window.curU.role === 'ADMIN') {
-                nav.innerHTML = `<div onclick="switchTab('a-dash')" class="sidebar-item active"><i class="fas fa-chart-pie mr-3 w-4 text-center"></i>Bảng điều khiển</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-list-check mr-3 w-4 text-center"></i>Duyệt lệnh hệ thống</div><div onclick="switchTab('a-users')" class="sidebar-item"><i class="fas fa-user-gear mr-3 w-4 text-center"></i>Quản lý thành viên</div><div onclick="switchTab('a-logs')" class="sidebar-item"><i class="fas fa-network-wired mr-3 w-4 text-center"></i>Nhật ký kết nối</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-shield-halved mr-3 w-4 text-center"></i>Đổi mật khẩu</div>`;
+                nav.innerHTML = `<div onclick="switchTab('a-dash')" class="sidebar-item active"><i class="fas fa-chart-pie mr-3 w-4 text-center"></i>Bảng điều khiển</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-list-check mr-3 w-4 text-center"></i>Quản lý hoàn tiền</div><div onclick="switchTab('a-users')" class="sidebar-item"><i class="fas fa-user-gear mr-3 w-4 text-center"></i>Quản lý thành viên</div><div onclick="switchTab('a-logs')" class="sidebar-item"><i class="fas fa-network-wired mr-3 w-4 text-center"></i>Nhật ký kết nối</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-shield-halved mr-3 w-4 text-center"></i>Đổi mật khẩu</div>`;
                 hh.innerHTML = `<thead><tr><th class="col-user">Khởi tạo</th><th class="col-name">Chủ tài khoản</th><th class="col-bank">Ngân hàng</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền</th><th class="col-time">Thời gian gửi</th><th class="col-status">Trạng thái</th><th class="col-action text-center">Hành động</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.remove('hidden');
             } else {
@@ -512,9 +512,17 @@
                 const appCount = window.dStore.filter(o => o.status === 'ĐÃ DUYỆT').length;
                 const rejCount = window.dStore.filter(o => o.status === 'TỪ CHỐI').length;
 
+                // THÊM: Tính toán số tiền cộng dồn của các đơn hàng có trạng thái "ĐÃ DUYỆT"
+                const totalApprovedMoney = window.dStore
+                    .filter(o => o.status === 'ĐÃ DUYỆT' && o.money)
+                    .reduce((sum, o) => sum + Number(o.money), 0);
+
                 document.getElementById('stat-users').innerText = window.uStore.length;
                 document.getElementById('stat-orders').innerText = window.dStore.length;
                 document.getElementById('stat-pending').innerText = pndCount;
+                
+                // CẬP NHẬT: Gán giá trị tổng số tiền thực tế vào ô thống kê Dashboard
+                document.getElementById('stat-money').innerText = totalApprovedMoney.toLocaleString() + ' đ';
                 
                 if(document.getElementById('lbl-pnd-count')) document.getElementById('lbl-pnd-count').innerText = pndCount;
                 if(document.getElementById('lbl-app-count')) document.getElementById('lbl-app-count').innerText = appCount;
@@ -523,8 +531,8 @@
                 let filteredUsers = window.uStore.filter(u => u && u.id);
                 if(fUserRole !== 'ALL') { filteredUsers = filteredUsers.filter(u => u.role === fUserRole); }
                 if(sUserKey !== '') {
-                    filteredUsers = filteredUsers.filter(u => 
-                        (u.name && u.name.toLowerCase().includes(sUserKey)) || 
+                    filteredUsers = filteredUsers.filter(u => 
+                        (u.name && u.name.toLowerCase().includes(sUserKey)) || 
                         (u.user && u.user.toLowerCase().includes(sUserKey))
                     );
                 }
@@ -585,10 +593,10 @@
             if(window.curU.role === 'ADMIN') {
                 if(fOrderStatus !== 'ALL') { ds = ds.filter(i => i.status === fOrderStatus); }
                 if(sOrderKey !== '') {
-                    ds = ds.filter(i => 
-                        (i.owner && i.owner.toLowerCase().includes(sOrderKey)) || 
-                        (i.acc && i.acc.toLowerCase().includes(sOrderKey)) || 
-                        (i.bank && i.bank.toLowerCase().includes(sOrderKey)) || 
+                    ds = ds.filter(i => 
+                        (i.owner && i.owner.toLowerCase().includes(sOrderKey)) || 
+                        (i.acc && i.acc.toLowerCase().includes(sOrderKey)) || 
+                        (i.bank && i.bank.toLowerCase().includes(sOrderKey)) || 
                         (i.code && i.code.toLowerCase().includes(sOrderKey)) ||
                         (i.creatorUser && i.creatorUser.toLowerCase().includes(sOrderKey))
                     );
@@ -610,7 +618,6 @@
             }
         }
 
-        // KÍCH HOẠT ĐỘNG HÀM XUẤT VIETQR TỰ ĐỘNG THEO THỜI GIAN THỰC CHO KHÁCH HÀNG QUÉT
         window.openVerificationModal = () => {
             const rawBank = (window.curU.adminVerifyBank || '').trim().toLowerCase();
             const rawAcc = (window.curU.adminVerifyAcc || '').trim();
@@ -623,9 +630,7 @@
             document.getElementById('lblAvbMoney').innerText = rawMoney.toLocaleString() + " VNĐ";
             document.getElementById('lblAvbNote').innerText = rawNote.toUpperCase() || 'XAC MINH TAI KHOAN';
             
-            // XỬ LÝ TỰ ĐỘNG TẠO MÃ QR ĐỘNG QUA CƠ CHẾ ĐỊNH DANH API VIETQR QUỐC GIA
             if (rawBank && rawAcc) {
-                // Mã hóa chuỗi URL thành chuẩn mã QR có chứa số tiền và nội dung tự động điền sẵn
                 const encodedNote = encodeURIComponent(rawNote);
                 const generatedQrUrl = `https://img.vietqr.io/image/${rawBank}-${rawAcc}-compact2.png?amount=${rawMoney}&addInfo=${encodedNote}&accountName=${encodeURIComponent(window.curU.adminVerifyName || '')}`;
                 
