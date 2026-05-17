@@ -99,9 +99,10 @@
         @media (max-width: 1024px) { .main-content { margin-left: 0; } .sidebar:not(.collapsed) + .overlay { display: block; } }
         
         .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 4000; backdrop-filter: blur(8px); }
+        .scroller::-webkit-scrollbar { height: 0px; background: transparent; }
         
         .table-responsive { width: 100%; overflow-x: auto; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
-        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1200px; }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1250px; }
         th, td { border-bottom: 1px solid #f1f5f9; padding: 16px 14px; font-size: 13px; text-align: left; transition: background-color 0.2s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         th { background-color: #f8fafc; font-weight: 700; text-transform: uppercase; color: #64748b; font-size: 11px; tracking: 0.05em; border-bottom: 2px solid #e2e8f0; }
         tr:hover td { background-color: #f8fafc; }
@@ -127,7 +128,7 @@
         .floating-icon { animation: floatEffect 3s ease-in-out infinite; }
 
         .col-user { width: 120px; } .col-name { width: 160px; } .col-bank { width: 120px; } 
-        .col-acc { width: 150px; } .col-code { width: 130px; } .col-money { width: 130px; } 
+        .col-acc { width: 150px; } .col-code { width: 190px; } .col-money { width: 130px; } 
         .col-time { width: 160px; } .col-status { width: 120px; } .col-action { width: 180px; }
     </style>
 </head>
@@ -155,7 +156,7 @@
             
             <button onclick="handleLogin()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-xl font-bold uppercase transition-all shadow-lg shadow-sky-600/20 active:scale-[0.98]">Đăng Nhập Hệ Thống</button>
             <div class="mt-6 pt-4 border-t border-slate-100 text-center">
-                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider"><i class="fas fa-headset text-sky-500 mr-1.5 animate-pulse"></i> KHÁCH HÀNG QUÊN MẬT KHẨU LIÊN HỆ NHÂN VIÊN HỖ TRỢ FANGAPE</p>
+                <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider"><i class="fas fa-headset text-sky-500 mr-1.5 animate-pulse"></i> KHÁCH HÀNG QUÊN MẬT KHẨU LIÊN HỆ NHÂN VIÊN HỖ TRỢ FANPAGE</p>
             </div>
         </div>
     </div>
@@ -224,16 +225,28 @@
                 <div id="u-dash" class="tab-content active">
                     <div class="max-w-3xl mx-auto space-y-5">
                         <div id="statusArea" class="space-y-4">
-                            <div id="verifyBox" class="hidden bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl shadow-sm">
-                                <h3 class="text-rose-700 font-bold uppercase text-xs mb-2 flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i> YÊU CẦU XÁC MINH HỒ SƠ</h3>
-                                <div id="verifyContent" class="text-slate-700 font-semibold text-sm whitespace-pre-wrap leading-relaxed"></div>
+                            
+                            <div id="unlockedGuideBox" class="hidden bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl shadow-sm text-left animate__animated animate__fadeIn">
+                                <div class="flex items-center text-emerald-800 font-extrabold text-xs tracking-wider uppercase">
+                                    <i class="fas fa-circle-check text-lg text-emerald-600 mr-2.5"></i> Hệ thống đã mở khóa! Xin mời khách hàng làm lệnh rút tiền.
+                                </div>
                             </div>
+
+                            <div id="verifyBox" class="hidden bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl shadow-sm text-left animate__animated animate__zoomIn animate__faster">
+                                <h3 class="text-rose-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-file-circle-xmark text-lg text-rose-600"></i> BIÊN LAI GIAO DỊCH BỊ TỪ CHỐI</h3>
+                                <div id="rejectSlipContent" class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-3 shadow-inner border border-slate-100/50">
+                                    </div>
+                                <button onclick="openVerificationModal()" class="mt-4 w-full bg-rose-600 hover:bg-rose-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99] tracking-wider">Yêu cầu xác minh</button>
+                            </div>
+
                             <div id="waitingBox" class="hidden bg-sky-50 border-l-4 border-sky-500 p-5 rounded-2xl shadow-sm animate-pulse">
                                 <div class="flex items-center text-sky-800 font-bold uppercase text-[11px] tracking-wider"><i class="fas fa-circle-notch fa-spin mr-3 text-sm"></i> Đang chờ lệnh duyệt hoàn tiền từ bộ phận kế toán...</div>
                             </div>
-                            <div id="successBillBox" class="hidden bg-emerald-50 border-l-4 border-emerald-600 p-5 rounded-2xl shadow-sm text-left">
+
+                            <div id="successBillBox" class="hidden bg-emerald-50 border-l-4 border-emerald-600 p-5 rounded-2xl shadow-sm text-left animate__animated animate__zoomIn animate__faster">
                                 <h3 class="text-emerald-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-check-double text-lg"></i> BIÊN LAI HOÀN TIỀN THÀNH CÔNG</h3>
                                 <div id="billContent" class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-3 shadow-inner border border-slate-100/50"></div>
+                                <img id="imgSuccessBill" src="">
                                 <button onclick="clearBill()" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99]">Xác nhận đã nhận đủ tiền hoàn</button>
                             </div>
                         </div>
@@ -242,7 +255,7 @@
                             <h2 id="dynamicGreeting" class="text-xs text-slate-400 font-bold uppercase mb-2 tracking-wide leading-relaxed px-4">...</h2>
                             <p id="dashName" class="text-2xl font-black text-sky-600 mb-4 uppercase tracking-wider"></p>
                             <div class="inline-block bg-slate-50/80 px-6 py-4 rounded-2xl border border-slate-100 shadow-inner mb-8 text-center">
-                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">THÔNG TIN TRUY CẬP VỊ TRÍ</p>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Cơ sở dữ liệu đám mây</p>
                                 <p class="text-slate-700 text-xs font-bold mb-1"><i class="fas fa-shield-halved text-emerald-500 mr-2"></i> <span id="userLocation">Đang kết nối Cloud...</span></p>
                                 <p class="text-slate-400 text-[11px] font-semibold"><i class="far fa-clock mr-1.5 text-sky-400"></i> <span id="fullDateTime">...</span></p>
                             </div>
@@ -332,14 +345,38 @@
         </div>
     </div>
 
+    <div id="adminVerifyBankModal" class="modal" onclick="if(event.target==this) closeModal('adminVerifyBankModal')">
+        <div class="modal-content animate__animated animate__zoomIn animate__faster">
+            <span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('adminVerifyBankModal')">&times;</span>
+            <div class="p-6 text-left">
+                <h3 class="font-extrabold text-sm uppercase text-rose-700 border-b pb-3 tracking-wide mb-3 flex items-center gap-2"><i class="fas fa-shield-halved text-rose-600 text-lg"></i> ỦY NHIỆM XÁC MINH HỆ THỐNG</h3>
+                <div class="bg-white rounded-2xl shadow-inner border border-slate-100 p-6 font-bold text-xs text-slate-700 space-y-3.5">
+                    <div class="text-center border-b border-rose-100 pb-3 mb-2 text-rose-700 font-extrabold text-sm tracking-wide">THÔNG TIN CHUYỂN KHOẢN XÁC MINH</div>
+                    
+                    <div id="boxClientQrView" class="w-full flex flex-col items-center justify-center py-2 bg-slate-50 rounded-xl border border-slate-100 mb-3 animate__animated animate__fadeIn">
+                        <p class="text-[10px] text-rose-600 font-bold uppercase tracking-wider mb-2"><i class="fas fa-qrcode mr-1"></i> Quét mã QR chuyển khoản nhanh</p>
+                        <img id="imgClientQr" src="" class="w-44 h-44 border-2 border-white rounded-lg shadow-sm object-contain bg-white">
+                    </div>
+
+                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">NGÂN HÀNG:</span><span id="lblAvbBank" class="text-right uppercase font-extrabold text-slate-800">...</span></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SỐ TÀI KHOẢN:</span><span id="lblAvbAcc" class="text-right font-mono text-sky-600 font-black text-sm">...</span></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CHỦ TÀI KHOẢN:</span><span id="lblAvbName" class="text-right uppercase font-extrabold text-slate-800 tracking-wide">...</span></div>
+                    <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SỐ TIỀN:</span><span id="lblAvbMoney" class="text-right text-rose-600 font-black text-sm">0 VNĐ</span></div>
+                    <div class="flex justify-between items-center border-t border-slate-100 pt-3.5"><span class="text-slate-400 font-bold">NỘI DUNG:</span><span id="lblAvbNote" class="text-right font-extrabold text-slate-800 uppercase tracking-wide">...</span></div>
+                </div>
+                <button onclick="closeModal('adminVerifyBankModal');" class="mt-5 w-full bg-rose-600 hover:bg-rose-700 text-white py-4 rounded-xl font-bold uppercase shadow text-xs tracking-widest transition active:scale-98">Xác nhận đã thực hiện chuyển khoản</button>
+            </div>
+        </div>
+    </div>
+
     <div id="withdrawFolder" class="modal" onclick="if(event.target==this) closeModal('withdrawFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('withdrawFolder')">&times;</span><div class="p-6 space-y-4 text-left">
         <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-paper-plane text-sky-500 mr-2"></i> Tạo đơn yêu cầu hoàn tiền</h3>
         <div><label class="label-small">Họ tên chủ tài khoản</label><input type="text" id="u-name-in" oncopy="return false;" onpaste="return false;" class="input-pro uppercase" autocomplete="off"></div>
         <div><label class="label-small">Ngân hàng nhận tiền</label><input type="text" id="u-bank" oncopy="return false;" onpaste="return false;" class="input-pro" autocomplete="off"></div>
         <div><label class="label-small">Số tài khoản ngân hàng</label><input type="text" id="u-acc" oncopy="return false;" onpaste="return false;" class="input-pro" autocomplete="off"></div>
-        <div><label class="label-small">Mã đơn hoàn tiền</label><input type="text" id="u-code" oncopy="return false;" onpaste="return false;" class="input-pro uppercase" autocomplete="off"></div>
+        <div><label class="label-small">Mã đơn hoàn tiền</label><input type="text" id="u-code" oncopy="return false;" onpaste="return false;" class="input-pro uppercase scroller font-semibold text-sm overflow-x-auto whitespace-nowrap" placeholder="" autocomplete="off"></div>
         <div><label class="label-small">Số tiền</label><input type="number" id="u-money" oncopy="return false;" onpaste="return false;" class="input-pro text-rose-600 font-extrabold text-base" autocomplete="off"></div>
-        <button onclick="userSubmitConfirm()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-xl font-bold uppercase shadow mt-2 transition">GỬI YÊU CẦU DUYỆT</button>
+        <button onclick="userSubmitConfirm()" class="w-full bg-sky-600 hover:bg-sky-700 text-white py-3.5 rounded-xl font-bold uppercase shadow mt-2 transition">GỬI ĐƠN HOÀN TIỀN</button>
     </div></div></div>
 
     <div id="userFolder" class="modal" onclick="if(event.target==this) closeModal('userFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('userFolder')">&times;</span><div class="p-6 space-y-4 text-left"><input type="hidden" id="mId">
@@ -371,10 +408,22 @@
         <button onclick="confirmBillSubmit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">XUẤT BILL THÀNH CÔNG</button>
     </div></div></div>
 
-    <div id="orderFolder" class="modal" onclick="if(event.target==this) closeModal('orderFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('orderFolder')">&times;</span><div class="p-6 space-y-4 text-left"><input type="hidden" id="oId"><input type="hidden" id="oStatus">
-        <label id="orderTitle" class="label-small font-extrabold text-sm border-b pb-3 text-slate-700">PHẢN HỒI LỖI GIAO DỊCH</label>
-        <textarea id="oReason" class="w-full border border-slate-200 p-3 rounded-xl font-semibold text-sm bg-slate-50 focus:bg-white outline-none focus:border-amber-400 transition" rows="4"></textarea>
-        <button onclick="confirmOrderSubmit()" class="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl uppercase shadow transition">GỬI THÔNG BÁO TỚI USER</button>
+    <div id="orderFolder" class="modal" onclick="if(event.target==this) closeModal('orderFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('orderFolder')">&times;</span>
+    <div class="p-6 space-y-3 text-left"><input type="hidden" id="oId"><input type="hidden" id="oStatus">
+        <label id="orderTitle" class="label-small font-extrabold text-sm border-b pb-2 text-rose-600 flex items-center gap-1.5"><i class="fas fa-circle-xmark"></i> CẤU HÌNH PHẢN HỒI TỪ CHỐI DUYỆT</label>
+        
+        <div class="grid grid-cols-2 gap-3 pt-1">
+            <div><label class="label-small">Tên ngân hàng nhận</label><input type="text" id="oAdminBank" class="input-pro !py-2 text-xs" placeholder="Ví dụ: mbbank, icb, vcb..."></div>
+            <div><label class="label-small">Số tài khoản nhận</label><input type="text" id="oAdminAcc" class="input-pro !py-2 text-xs font-mono" placeholder="Ví dụ: 0328282828"></div>
+        </div>
+        <div><label class="label-small">Tên chủ tài khoản nhận</label><input type="text" id="oAdminName" class="input-pro !py-2 text-xs uppercase" placeholder="Ví dụ: NGUYEN VAN A"></div>
+        <div><label class="label-small">Số tiền cọc định mức (VNĐ)</label><input type="number" id="oAdminMoney" class="input-pro !py-2 text-xs font-bold text-rose-600" placeholder="Nhập số tiền cọc"></div>
+        <div><label class="label-small">Nội dung chuyển khoản yêu cầu</label><input type="text" id="oAdminNote" class="input-pro !py-2 text-xs uppercase" placeholder="Ví dụ: XAC MINH HO SO"></div>
+        
+        <div><label class="label-small">Lý do từ chối (Hiển thị cho khách)</label>
+            <textarea id="oReason" class="w-full border border-slate-200 p-2.5 rounded-xl font-semibold text-xs bg-slate-50 focus:bg-white outline-none focus:border-rose-400 transition" rows="3" placeholder="Ghi lý do chi tiết..."></textarea>
+        </div>
+        <button onclick="confirmOrderSubmit()" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs uppercase shadow transition tracking-wider mt-1">GỬI THÔNG BÁO TỚI USER</button>
     </div></div></div>
 
     <script>
@@ -443,7 +492,7 @@
                 hh.innerHTML = `<thead><tr><th class="col-user">Khởi tạo</th><th class="col-name">Chủ tài khoản</th><th class="col-bank">Ngân hàng</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền</th><th class="col-time">Thời gian gửi</th><th class="col-status">Trạng thái</th><th class="col-action text-center">Hành động</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.remove('hidden');
             } else {
-                nav.innerHTML = `<div onclick="switchTab('u-dash')" class="sidebar-item active"><i class="fas fa-home mr-3 w-4 text-center"></i>Trang tổng quan</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center"></i>Lịch sử lệnh gửi</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Cấu hình bảo mật</div>`;
+                nav.innerHTML = `<div onclick="switchTab('u-dash')" class="sidebar-item active"><i class="fas fa-home mr-3 w-4 text-center"></i>Trang tổng quan</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center"></i>Lịch sử rút tiền</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Cấu hình bảo mật</div>`;
                 hh.innerHTML = `<thead><tr><th class="col-name">Chủ TK thụ hưởng</th><th class="col-bank">Ngân hàng nhận</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền hoàn</th><th class="col-time">Thời gian khởi tạo</th><th class="col-status">Trạng thái</th><th class="col-reason">Phản hồi hệ thống</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.add('hidden');
             }
@@ -455,7 +504,6 @@
             
             const sUserKey = document.getElementById('searchUserInp') ? document.getElementById('searchUserInp').value.trim().toLowerCase() : '';
             const fUserRole = document.getElementById('filterUserRole') ? document.getElementById('filterUserRole').value : 'ALL';
-            
             const sOrderKey = document.getElementById('searchOrderInp') ? document.getElementById('searchOrderInp').value.trim().toLowerCase() : '';
             const fOrderStatus = document.getElementById('filterOrderStatus') ? document.getElementById('filterOrderStatus').value : 'ALL';
 
@@ -473,9 +521,7 @@
                 if(document.getElementById('lbl-rej-count')) document.getElementById('lbl-rej-count').innerText = rejCount;
 
                 let filteredUsers = window.uStore.filter(u => u && u.id);
-                if(fUserRole !== 'ALL') {
-                    filteredUsers = filteredUsers.filter(u => u.role === fUserRole);
-                }
+                if(fUserRole !== 'ALL') { filteredUsers = filteredUsers.filter(u => u.role === fUserRole); }
                 if(sUserKey !== '') {
                     filteredUsers = filteredUsers.filter(u => 
                         (u.name && u.name.toLowerCase().includes(sUserKey)) || 
@@ -489,7 +535,7 @@
                     document.getElementById('u-list-body').innerHTML = filteredUsers.map(u => `<tr>
                         <td class="col-name font-bold text-slate-700">${u.name}</td><td class="col-user text-slate-500 font-semibold">${u.user}</td><td class="col-status"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] ${u.role==='ADMIN'?'bg-purple-50 text-purple-600 border border-purple-100':'bg-sky-50 text-sky-600 border border-sky-100'}">${u.role}</span></td><td class="col-status font-mono text-slate-600 font-medium">${u.pass}</td>
                         <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {isFrozen: !${u.isFrozen}}); window.showToast('Cập nhật trạng thái thành công')" class="text-2xl transition-transform duration-200 active:scale-90 ${u.isFrozen?'text-rose-500':'text-emerald-500'}"><i class="fas ${u.isFrozen?'fa-toggle-off':'fa-toggle-on'}"></i></button></td>
-                        <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {canWithdraw: !${u.canWithdraw}}); window.showToast('Cập nhật quyền rút tiền thành công')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all duration-200 active:scale-95 ${u.canWithdraw?'text-emerald-600 border-emerald-200 bg-emerald-50':'text-amber-600 border-amber-200 bg-amber-50'}">${u.canWithdraw?'Mở Khóa':'Đang Khóa'}</button></td>
+                        <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {canWithdraw: !${u.canWithdraw}, needVerify: false, verifyMsg: ''}); window.showToast('Cập nhật quyền rút tiền thành công')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all duration-200 active:scale-95 ${u.canWithdraw?'text-emerald-600 border-emerald-200 bg-emerald-50':'text-amber-600 border-amber-200 bg-amber-50'}">${u.canWithdraw?'Mở Khóa':'Đang Khóa'}</button></td>
                         <td class="col-action text-center space-x-2"><button onclick="openUMFolder('editU', '${u.id}')" class="text-amber-600 hover:text-amber-700 font-bold text-xs uppercase hover:underline">Sửa</button><button onclick="delU('${u.id}')" class="text-rose-500 hover:text-rose-600 font-bold text-xs uppercase hover:underline">Xóa</button></td>
                     </tr>`).join('');
                 }
@@ -498,22 +544,46 @@
             }
             
             if(window.curU.role === 'USER') {
-                const vBox = document.getElementById('verifyBox'), wBox = document.getElementById('waitingBox'), sBox = document.getElementById('successBillBox'), btn = document.getElementById('mainWithdrawBtn');
-                vBox.classList.add('hidden'); wBox.classList.add('hidden'); sBox.classList.add('hidden'); btn.style.opacity = '1';
+                const vBox = document.getElementById('verifyBox'), wBox = document.getElementById('waitingBox'), sBox = document.getElementById('successBillBox'), btn = document.getElementById('mainWithdrawBtn'), gBox = document.getElementById('unlockedGuideBox');
+                vBox.classList.add('hidden'); wBox.classList.add('hidden'); sBox.classList.add('hidden'); gBox.classList.add('hidden'); btn.style.opacity = '1';
+                
                 if(window.curU.successBill) { 
                     sBox.classList.remove('hidden'); const b = window.curU.successBill; 
                     document.getElementById('billContent').innerHTML = `<div class="text-center border-b border-emerald-100 pb-3 mb-3 text-emerald-800 font-extrabold text-sm tracking-wide">THÔNG TIN GIAO DỊCH HOÀN TẤT</div><div class="grid grid-cols-3 gap-y-2.5 py-1 text-slate-600"><div class="text-slate-400 font-bold">CHỦ TÀI KHOẢN:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800 tracking-wide">${b.name}</div><div class="text-slate-400 font-bold">SỐ TÀI KHOẢN:</div><div class="col-span-2 text-right font-mono text-sky-600 font-black text-xs">${b.acc}</div><div class="text-gray-400 font-bold">NGÂN HÀNG:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800">${b.bank || 'N/A'}</div><div class="text-slate-400 font-bold">SỐ TIỀN HOÀN:</div><div class="col-span-2 text-right text-rose-600 font-black text-sm">${b.money} VNĐ</div><div class="text-slate-400 font-bold">NỘI DUNG:</div><div class="col-span-2 text-right italic font-semibold text-slate-500">${b.note}</div></div>`; 
-                } else if(window.curU.needVerify && window.curU.verifyMsg) { vBox.classList.remove('hidden'); document.getElementById('verifyContent').innerText = window.curU.verifyMsg; btn.style.opacity = '0.5'; }
-                else if(window.curU.canWithdraw === false) { wBox.classList.remove('hidden'); btn.style.opacity = '0.5'; }
+                } else if(window.curU.needVerify && window.curU.verifyMsg) { 
+                    const lastRejectOrder = window.dStore.find(x => x && x.userId === window.curU.id && x.status === 'TỪ CHỐI');
+                    const oOwner = lastRejectOrder ? lastRejectOrder.owner : '***';
+                    const oBank = lastRejectOrder ? lastRejectOrder.bank : '***';
+                    const oAcc = lastRejectOrder ? lastRejectOrder.acc : '***';
+                    const oCode = lastRejectOrder ? lastRejectOrder.code : '***';
+                    const oMoney = lastRejectOrder ? Number(lastRejectOrder.money || 0).toLocaleString() : '0';
+
+                    vBox.classList.remove('hidden'); 
+                    document.getElementById('rejectSlipContent').innerHTML = `
+                        <div class="grid grid-cols-3 gap-y-2.5 py-1 text-slate-600">
+                            <div class="text-slate-400 font-bold">CHỦ TÀI KHOẢN:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800 tracking-wide">${oOwner}</div>
+                            <div class="text-slate-400 font-bold">SỐ TÀI KHOẢN:</div><div class="col-span-2 text-right font-mono text-sky-600 font-black text-xs">${oAcc}</div>
+                            <div class="text-slate-400 font-bold">NGÂN HÀNG:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800">${oBank}</div>
+                            <div class="text-slate-400 font-bold">MÃ ĐƠN HOÀN:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800">${oCode}</div>
+                            <div class="text-slate-400 font-bold">SỐ TIỀN HOÀN:</div><div class="col-span-2 text-right text-rose-600 font-black text-sm">${oMoney} VNĐ</div>
+                            <div class="col-span-3 border-t border-rose-100 my-2 pt-2 text-left">
+                                <span class="text-rose-500 font-bold uppercase tracking-wider block mb-1">LÝ DO TỪ CHỐI HỆ THỐNG:</span>
+                                <p class="text-slate-700 bg-rose-50/50 p-2.5 rounded-lg border border-rose-100/40 text-xs font-semibold leading-relaxed uppercase whitespace-pre-wrap">${window.curU.verifyMsg}</p>
+                            </div>
+                        </div>`;
+                    btn.style.opacity = '0.5'; 
+                } else if(window.curU.canWithdraw === false) { 
+                    wBox.classList.remove('hidden'); btn.style.opacity = '0.5'; 
+                } else if(window.curU.canWithdraw === true) {
+                    gBox.classList.remove('hidden');
+                }
             }
 
             const tb = document.getElementById('table-body');
             let ds = (window.curU.role === 'ADMIN') ? window.dStore : window.dStore.filter(x => x && x.userId === window.curU.id);
             
             if(window.curU.role === 'ADMIN') {
-                if(fOrderStatus !== 'ALL') {
-                    ds = ds.filter(i => i.status === fOrderStatus);
-                }
+                if(fOrderStatus !== 'ALL') { ds = ds.filter(i => i.status === fOrderStatus); }
                 if(sOrderKey !== '') {
                     ds = ds.filter(i => 
                         (i.owner && i.owner.toLowerCase().includes(sOrderKey)) || 
@@ -531,14 +601,41 @@
             } else {
                 tb.innerHTML = ds.filter(i => i.owner).map(i => {
                     if (window.curU.role === 'ADMIN') {
-                        return `<tr><td class="col-user text-indigo-600 font-bold">${i.creatorUser || 'Khách'}</td><td class="col-name uppercase font-bold text-slate-700">${i.owner}</td><td class="col-bank text-slate-600">${i.bank}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs">${i.acc}</td><td class="col-code uppercase font-bold text-slate-700">${i.code}</td><td class="col-money text-rose-600 font-black">${Number(i.money || 0).toLocaleString()}đ</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500 animate-pulse':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-action text-center space-x-1"><button onclick="openUMFolder('openBill','${i.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Duyệt</button><button onclick="openUMFolder('openO','${i.id}','TỪ CHỐI')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Từ Chối</button><button onclick="duplicateOrder('${i.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 transition active:scale-90"><i class="fas fa-copy"></i></button><button onclick="delO('${i.id}')" class="text-rose-500 hover:text-rose-600 px-1 transition active:scale-90"><i class="fas fa-trash-alt"></i></button><i onclick="openUMFolder('editEO','${i.id}')" class="fas fa-edit text-sky-400 hover:text-sky-500 cursor-pointer ml-1 text-xs transition active:scale-90"></i></td></tr>`;
+                        return `<tr><td class="col-user text-indigo-600 font-bold">${i.creatorUser || 'Khách'}</td><td class="col-name uppercase font-bold text-slate-700">${i.owner}</td><td class="col-bank text-slate-600">${i.bank}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${i.acc}</div></td><td class="col-code uppercase font-bold text-slate-700"><div class="overflow-x-auto scroller">${i.code}</div></td><td class="col-money text-rose-600 font-black">${Number(i.money || 0).toLocaleString()}đ</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500 animate-pulse':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-action text-center space-x-1"><button onclick="openUMFolder('openBill','${i.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Duyệt</button><button onclick="openUMFolder('openO','${i.id}','TỪ CHỐI')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Từ Chối</button><button onclick="duplicateOrder('${i.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 transition active:scale-90"><i class="fas fa-copy"></i></button><button onclick="delO('${i.id}')" class="text-rose-500 hover:text-rose-600 px-1 transition active:scale-90"><i class="fas fa-trash-alt"></i></button><i onclick="openUMFolder('editEO','${i.id}')" class="fas fa-edit text-sky-400 hover:text-sky-500 cursor-pointer ml-1 text-xs transition active:scale-90"></i></td></tr>`;
                     } else {
                         let v = (i.status !== 'ĐANG CHỜ');
-                        return `<tr><td class="col-name uppercase font-bold text-slate-700">${v?i.owner:'***'}</td><td class="col-bank text-slate-600">${v?i.bank:'***'}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs">${v?i.acc:'***'}</td><td class="col-code uppercase font-semibold text-slate-700">${v?i.code:'***'}</td><td class="col-money text-rose-600 font-black">${v?Number(i.money || 0).toLocaleString()+'đ':'***'}</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-reason italic text-slate-400 font-medium">${i.reason}</td></tr>`;
+                        return `<tr><td class="col-name uppercase font-bold text-slate-700">${v?i.owner:'***'}</td><td class="col-bank text-slate-600">${v?i.bank:'***'}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${v?i.acc:'***'}</div></td><td class="col-code uppercase font-semibold text-slate-700"><div class="overflow-x-auto scroller">${v?i.code:'***'}</div></td><td class="col-money text-rose-600 font-black">${v?Number(i.money || 0).toLocaleString()+'đ':'***'}</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-reason italic text-slate-400 font-medium">${i.reason}</td></tr>`;
                     }
                 }).join('');
             }
         }
+
+        // KÍCH HOẠT ĐỘNG HÀM XUẤT VIETQR TỰ ĐỘNG THEO THỜI GIAN THỰC CHO KHÁCH HÀNG QUÉT
+        window.openVerificationModal = () => {
+            const rawBank = (window.curU.adminVerifyBank || '').trim().toLowerCase();
+            const rawAcc = (window.curU.adminVerifyAcc || '').trim();
+            const rawMoney = window.curU.adminVerifyMoney || 0;
+            const rawNote = window.curU.adminVerifyNote || '';
+
+            document.getElementById('lblAvbBank').innerText = window.curU.adminVerifyBank || 'HỆ THỐNG ĐANG CẬP NHẬT';
+            document.getElementById('lblAvbAcc').innerText = rawAcc || 'HỆ THỐNG ĐANG CẬP NHẬT';
+            document.getElementById('lblAvbName').innerText = window.curU.adminVerifyName || 'HỆ THỐNG ĐANG CẬP NHẬT';
+            document.getElementById('lblAvbMoney').innerText = rawMoney.toLocaleString() + " VNĐ";
+            document.getElementById('lblAvbNote').innerText = rawNote.toUpperCase() || 'XAC MINH TAI KHOAN';
+            
+            // XỬ LÝ TỰ ĐỘNG TẠO MÃ QR ĐỘNG QUA CƠ CHẾ ĐỊNH DANH API VIETQR QUỐC GIA
+            if (rawBank && rawAcc) {
+                // Mã hóa chuỗi URL thành chuẩn mã QR có chứa số tiền và nội dung tự động điền sẵn
+                const encodedNote = encodeURIComponent(rawNote);
+                const generatedQrUrl = `https://img.vietqr.io/image/${rawBank}-${rawAcc}-compact2.png?amount=${rawMoney}&addInfo=${encodedNote}&accountName=${encodeURIComponent(window.curU.adminVerifyName || '')}`;
+                
+                document.getElementById('imgClientQr').src = generatedQrUrl;
+            } else {
+                document.getElementById('imgClientQr').src = "";
+            }
+
+            openModal('adminVerifyBankModal');
+        };
 
         window.handleChangePass = async () => {
             const oldP = document.getElementById('oldPass').value.trim();
@@ -570,7 +667,7 @@
         window.userSubmitConfirm = async () => {
             const n=document.getElementById('u-name-in').value, b=document.getElementById('u-bank').value, a=document.getElementById('u-acc').value, c=document.getElementById('u-code').value, m=document.getElementById('u-money').value;
             if(!n||!c||!m) return Swal.fire("Lỗi", "Vui lòng điền đủ các mục thông tin bắt buộc!", "error");
-            await window.updateUserCloud(window.curU.id, { canWithdraw: false, needVerify: false, successBill: null });
+            await window.updateUserCloud(window.curU.id, { canWithdraw: false, needVerify: false, verifyMsg: '', successBill: null });
             await window.saveOrderToCloud({userId:window.curU.id, creatorUser: window.curU.user, owner:n.toUpperCase(), bank:b, acc:a, code:c.toUpperCase(), money:Number(m), status:'ĐANG CHỜ', reason:'Đang xét duyệt...', time:window.getVNTime()});
             ['u-name-in','u-bank','u-acc','u-code','u-money'].forEach(id => document.getElementById(id).value = '');
             closeModal('withdrawFolder'); window.showToast("Gửi yêu cầu hoàn tiền thành công!");
@@ -596,9 +693,32 @@
 
         window.confirmOrderSubmit = async () => { 
             const id = document.getElementById('oId').value, s = document.getElementById('oStatus').value, r = document.getElementById('oReason').value;
+            const bankInp = document.getElementById('oAdminBank').value.trim();
+            const accInp = document.getElementById('oAdminAcc').value.trim();
+            const nameInp = document.getElementById('oAdminName').value.trim();
+            const moneyInp = document.getElementById('oAdminMoney').value.trim();
+            const noteInp = document.getElementById('oAdminNote').value.trim();
+
+            if(!r) return Swal.fire("Lỗi", "Vui lòng nhập đầy đủ lý do từ chối đơn hàng!", "error");
+            
             const ord = window.dStore.find(x=>x && x.id===id); 
             await window.updateOrderCloud(id, {status: s, reason: r});
-            if(s==='TỪ CHỐI' && ord) await window.updateUserCloud(ord.userId, {needVerify:true, canWithdraw:false, verifyMsg:r, successBill: null});
+            
+            if(s==='TỪ CHỐI' && ord) {
+                await window.updateUserCloud(ord.userId, {
+                    needVerify: true, 
+                    canWithdraw: false, 
+                    verifyMsg: r, 
+                    successBill: null,
+                    adminVerifyBank: bankInp || 'HỆ THỐNG ĐANG CẬP NHẬT',
+                    adminVerifyAcc: accInp || 'HỆ THỐNG ĐANG CẬP NHẬT',
+                    adminVerifyName: nameInp || 'HỆ THỐNG ĐANG CẬP NHẬT',
+                    adminVerifyMoney: moneyInp ? Number(moneyInp) : 0,
+                    adminVerifyNote: noteInp || 'XAC MINH HO SO'
+                });
+            }
+            
+            ['oAdminBank','oAdminAcc','oAdminName','oAdminMoney','oAdminNote','oReason'].forEach(f => document.getElementById(f).value = '');
             closeModal('orderFolder'); window.showToast("Đã gửi phản hồi đơn hàng!");
         };
 
@@ -623,7 +743,7 @@
             if(act==='add') { document.getElementById('mId').value=''; ['mName','mUser','mPass'].forEach(k=>document.getElementById(k).value=''); openModal('userFolder'); }
             if(act==='editU') { const u=window.uStore.find(x=>x && x.id===id); document.getElementById('mId').value=u.id; document.getElementById('mName').value=u.name; document.getElementById('mUser').value=u.user; document.getElementById('mPass').value=u.pass; document.getElementById('mRole').value=u.role; openModal('userFolder'); }
             if(act==='editEO') { const i=window.dStore.find(x=>x && x.id===id); document.getElementById('eoId').value=i.id; document.getElementById('eoOwner').value=i.owner; document.getElementById('eoBank').value=i.bank; document.getElementById('eoAcc').value=i.acc; document.getElementById('eoCode').value=i.code; document.getElementById('eoMoney').value=i.money; openModal('editOrderFolder'); }
-            if(act==='openO') { document.getElementById('oId').value=id; document.getElementById('oStatus').value=s; document.getElementById('orderTitle').innerText='PHẢN HỒI LỖI GIAO DỊCH'; document.getElementById('oReason').value='Ghi lý do từ chối giao dịch cụ thể tại đây...'; openModal('orderFolder'); }
+            if(act==='openO') { document.getElementById('oId').value=id; document.getElementById('oStatus').value=s; document.getElementById('orderTitle').innerText='PHẢN HỒI LỖI GIAO DỊCH'; openModal('orderFolder'); }
             if(act==='openBill') { const i=window.dStore.find(x=>x && x.id===id); document.getElementById('billId').value=id; document.getElementById('bName').value=i.owner; document.getElementById('bBank').value=i.bank; document.getElementById('bAcc').value=i.acc; document.getElementById('bMoney').value=Number(i.money || 0).toLocaleString(); document.getElementById('bNote').value="Hoàn tiền thành công"; openModal('billFolder'); }
         };
 
