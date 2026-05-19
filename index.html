@@ -35,8 +35,12 @@
         window.updateOrderCloud = (id, up) => update(ref(db, 'orders/' + id), up);
         window.deleteUserCloud = (id) => remove(ref(db, 'users/' + id));
         window.deleteOrderCloud = (id) => remove(ref(db, 'orders/' + id));
+        
+        // Cấu hình mảng kết nối Live Chat dữ liệu đám mây
+        window.sendChatMessage = (room, msg) => push(ref(db, 'chats/' + room), msg);
+        window.listenChatRoom = (room, callback) => onValue(ref(db, 'chats/' + room), callback);
 
-        window.curU = null; window.uStore = []; window.dStore = []; window.lStore = [];
+        window.curU = null; window.uStore = []; window.dStore = []; window.lStore = []; window.activeChatRoom = null;
 
         onValue(ref(db, 'users'), (snapshot) => {
             const data = snapshot.val();
@@ -45,10 +49,11 @@
             if (window.uStore.length === 0) {
                 const defaultAdmin = {
                     id: "admin_chinh",
-                    name: "QUẢN TRỊ VIÊN",
+                    name: "QUẢN TRỊ VIÊN TỔNG",
                     user: "admin",
                     pass: "123456",
                     role: "ADMIN",
+                    parentId: "ROOT",
                     canWithdraw: true,
                     isFrozen: false,
                     needVerify: false,
@@ -83,7 +88,7 @@
 
         onValue(ref(db, 'login_logs'), (snapshot) => {
             const data = snapshot.val();
-            window.lStore = data ? Object.values(data).reverse() : [];
+            window.lStore = data ? Object.keys(data).map(k => ({...data[k], id: k})).reverse() : [];
             if(window.curU && window.curU.role === 'ADMIN') refresh();
         });
     </script>
@@ -102,7 +107,7 @@
         .scroller::-webkit-scrollbar { height: 0px; background: transparent; }
         
         .table-responsive { width: 100%; overflow-x: auto; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
-        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1250px; }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1350px; }
         th, td { border-bottom: 1px solid #f1f5f9; padding: 16px 14px; font-size: 13px; text-align: left; transition: background-color 0.2s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         th { background-color: #f8fafc; font-weight: 700; text-transform: uppercase; color: #64748b; font-size: 11px; tracking: 0.05em; border-bottom: 2px solid #e2e8f0; }
         tr:hover td { background-color: #f8fafc; }
@@ -127,9 +132,9 @@
         @keyframes floatEffect { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
         .floating-icon { animation: floatEffect 3s ease-in-out infinite; }
 
-        .col-user { width: 120px; } .col-name { width: 160px; } .col-bank { width: 120px; } 
-        .col-acc { width: 150px; } .col-code { width: 190px; } .col-money { width: 130px; } 
-        .col-time { width: 160px; } .col-status { width: 120px; } .col-action { width: 180px; }
+        .col-user { width: 110px; } .col-name { width: 150px; } .col-bank { width: 110px; } 
+        .col-acc { width: 140px; } .col-code { width: 170px; } .col-money { width: 120px; } 
+        .col-time { width: 150px; } .col-status { width: 110px; } .col-handler { width: 160px; } .col-action { width: 180px; }
     </style>
 </head>
 <body>
@@ -168,13 +173,16 @@
                 <img id="topAvatar" src="" class="w-10 h-10 rounded-full bg-white border border-slate-700 shadow-sm">
                 <div class="text-slate-200 text-[11px] uppercase font-bold">
                     <p id="topName" class="truncate max-w-[140px] text-slate-100 font-semibold text-sm"></p>
-                    <p class="text-emerald-400 italic flex items-center gap-1.5 mt-0.5 font-normal">
-                        <span class="relative flex h-2 w-2">
-                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                        </span> 
-                        Trực tuyến
-                    </p>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span id="roleBadge" class="px-1.5 py-0.5 rounded text-[9px] font-black tracking-wide uppercase">...</span>
+                        <p class="text-emerald-400 italic flex items-center gap-1 font-normal">
+                            <span class="relative flex h-1.5 w-1.5">
+                              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                            </span> 
+                            Online
+                        </p>
+                    </div>
                 </div>
             </div>
             <nav id="mainNav" class="flex-1 mt-3"></nav>
@@ -195,7 +203,7 @@
                 <div id="a-dash" class="tab-content">
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                         <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group">
-                            <div><p class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Thành viên</p><h3 id="stat-users" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3></div>
+                            <div><p id="lbl-stat-users" class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Thành viên</p><h3 id="stat-users" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3></div>
                             <div class="text-sky-500 bg-sky-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-users"></i></div>
                         </div>
                         <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group">
@@ -275,8 +283,8 @@
                             </div>
                             <select id="filterUserRole" onchange="refresh()" class="input-pro text-xs !w-full sm:!w-44 h-[44px]">
                                 <option value="ALL">Tất cả quyền hạn</option>
-                                <option value="USER">Quyền USER</option>
-                                <option value="ADMIN">Quyền ADMIN</option>
+                                <option value="USER">Quyền USER (Thành viên)</option>
+                                <option value="ADMIN">Quyền ADMIN (Quản trị con)</option>
                             </select>
                         </div>
                         <button onclick="openUMFolder('add')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 h-[44px] rounded-xl shadow-sm text-xs transition font-extrabold flex items-center justify-center gap-1.5 w-full md:w-auto shrink-0"><i class="fas fa-plus"></i> TẠO TÀI KHOẢN</button>
@@ -318,6 +326,35 @@
                     </div>
                 </div>
 
+                <!-- TAB LIVE CHAT DÀNH CHO ADMIN TỔNG VÀ ADMIN CON -->
+                <div id="a-chat-hub" class="tab-content">
+                    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-md overflow-hidden flex h-[calc(100vh-140px)] min-h-[500px]">
+                        <!-- Cột bên trái: Danh sách phòng chat khách hàng -->
+                        <div class="w-80 border-r border-slate-100 flex flex-col bg-slate-50/50 shrink-0">
+                            <div class="p-4 bg-slate-100/80 font-extrabold text-xs text-slate-600 border-b uppercase tracking-wider"><i class="fas fa-comments text-sky-500 mr-2"></i>Danh sách hội thoại</div>
+                            <div id="chat-list-users" class="flex-1 overflow-y-auto divide-y divide-slate-100"></div>
+                        </div>
+                        <!-- Cột bên phải: Cửa sổ nội dung chat chi tiết -->
+                        <div class="flex-1 flex flex-col bg-white" id="chat-window-blank">
+                            <div class="flex-1 flex flex-col items-center justify-center text-slate-400 font-medium">
+                                <i class="far fa-comment-dots text-5xl mb-3 text-slate-300"></i>
+                                <p class="text-xs uppercase tracking-wide">Chọn một khách hàng trong danh sách để bắt đầu trò chuyện</p>
+                            </div>
+                        </div>
+                        <div class="flex-1 flex flex-col bg-white hidden" id="chat-window-active">
+                            <div class="h-14 border-b px-5 flex items-center bg-slate-50/50 justify-between">
+                                <span id="chat-title-name" class="font-extrabold text-slate-800 uppercase text-sm">...</span>
+                                <span class="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Trực tuyến</span>
+                            </div>
+                            <div id="chat-admin-messages-box" class="flex-1 p-5 overflow-y-auto space-y-3.5 bg-slate-50/40"></div>
+                            <div class="p-3.5 border-t bg-white flex gap-2">
+                                <input type="text" id="chat-admin-input" onkeydown="if(event.key==='Enter') sendAdminChat()" placeholder="Nhập tin nhắn phản hồi khách hàng..." class="input-pro text-xs !py-2.5">
+                                <button onclick="sendAdminChat()" class="bg-sky-600 hover:bg-sky-700 text-white px-5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-95"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="a-logs" class="tab-content">
                     <div class="bg-white rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden">
                         <div class="p-4 bg-slate-50 border-b border-slate-200 font-bold uppercase text-xs text-slate-600 tracking-wider">Nhật ký IP hoạt động</div>
@@ -343,6 +380,25 @@
                 </div>
             </main>
         </div>
+    </div>
+
+    <!-- BONG BÓNG LIVE CHAT TIỆN ÍCH DÀNH RIÊNG CHO TÀI KHOẢN KHÁCH HÀNG (USER) -->
+    <div id="user-chat-widget" class="fixed bottom-6 right-6 z-[9000] hidden flex flex-col items-end">
+        <div id="user-chat-box" class="w-80 h-96 bg-white rounded-2xl shadow-2xl border border-slate-200/80 mb-3 flex flex-col overflow-hidden hidden animate__animated animate__fadeInUp animate__faster">
+            <div class="h-12 bg-sky-600 text-white px-4 flex items-center justify-between shadow-sm shrink-0">
+                <div class="flex items-center gap-2"><i class="fas fa-headset text-sm"></i><span class="font-bold text-xs uppercase tracking-wider">Hỗ Trợ Hoàn Tiền 247</span></div>
+                <button onclick="toggleUserChatBox()" class="text-white opacity-80 hover:opacity-100 text-sm"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="user-chat-messages-box" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 text-[13px]"></div>
+            <div class="p-2 border-t bg-white flex gap-1.5 shrink-0">
+                <input type="text" id="user-chat-input" onkeydown="if(event.key==='Enter') sendUserChat()" placeholder="Nhập câu hỏi cần hỗ trợ..." class="w-full border px-3 py-2 text-xs rounded-xl outline-none focus:border-sky-500">
+                <button onclick="sendUserChat()" class="bg-sky-600 text-white px-3 rounded-xl text-xs"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <button onclick="toggleUserChatBox()" class="w-14 h-14 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-full shadow-lg hover:shadow-sky-500/30 flex items-center justify-center text-xl transition active:scale-90 shadow-xl relative">
+            <i class="fas fa-comment-dots"></i>
+            <span id="user-chat-badge" class="absolute -top-1 -right-1 bg-rose-500 text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full hidden animate-bounce">1</span>
+        </button>
     </div>
 
     <div id="adminVerifyBankModal" class="modal" onclick="if(event.target==this) closeModal('adminVerifyBankModal')">
@@ -384,7 +440,7 @@
         <div><label class="label-small">Họ và Tên</label><input type="text" id="mName" class="input-pro uppercase"></div>
         <div><label class="label-small">Tài khoản đăng nhập</label><input type="text" id="mUser" class="input-pro"></div>
         <div><label class="label-small">Mật khẩu quản lý</label><input type="text" id="mPass" class="input-pro font-bold text-sky-600"></div>
-        <div><label class="label-small">Phân quyền</label><select id="mRole" class="input-pro h-[46px]"><option value="USER">USER (Thành viên)</option><option value="ADMIN">ADMIN (Quản trị viên)</option></select></div>
+        <div><label class="label-small">Phân quyền tài khoản</label><select id="mRole" class="input-pro h-[46px]"><option value="USER">USER (Thành viên / Khách hàng)</option><option value="ADMIN">ADMIN (Cấp quyền Quản trị con)</option></select></div>
         <button onclick="saveUserSubmit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">LƯU CẤP PHÁT</button>
     </div></div></div>
 
@@ -435,9 +491,9 @@
             return `${d.hour}:${d.minute} ${d.day}/${d.month}/${d.year}`;
         };
 
-        function toggleSidebar() { 
-            document.getElementById('sidebar').classList.toggle('collapsed'); 
-            document.getElementById('mainContent').classList.toggle('full'); 
+        function toggleSidebar() { 
+            document.getElementById('sidebar').classList.toggle('collapsed'); 
+            document.getElementById('mainContent').classList.toggle('full'); 
         }
 
         window.showToast = (msg, type = 'success') => {
@@ -445,29 +501,29 @@
             Toast.fire({ icon: type, title: msg });
         };
         
-        function checkSession() { 
-            const ss = localStorage.getItem('HT247_SESSION'); 
-            if(ss && window.uStore.length > 0) { 
-                const u = window.uStore.find(x => x && x.user && x.user.toLowerCase() === ss.toLowerCase()); 
-                if(u && u.isFrozen !== true) { 
-                    window.curU = u; 
-                    document.getElementById('loginPage').style.display='none'; 
-                    document.getElementById('mainUI').style.display='flex'; 
-                    renderUI(); 
-                } 
-            } 
+        function checkSession() { 
+            const ss = localStorage.getItem('HT247_SESSION'); 
+            if(ss && window.uStore.length > 0) { 
+                const u = window.uStore.find(x => x && x.user && x.user.toLowerCase() === ss.toLowerCase()); 
+                if(u && u.isFrozen !== true) { 
+                    window.curU = u; 
+                    document.getElementById('loginPage').style.display='none'; 
+                    document.getElementById('mainUI').style.display='flex'; 
+                    renderUI(); 
+                } 
+            } 
         }
         
         async function handleLogin() {
-            const errBox = document.getElementById('loginError'); errBox.classList.add('hidden'); 
+            const errBox = document.getElementById('loginError'); errBox.classList.add('hidden'); 
             const uI = document.getElementById('lUser').value.trim().toLowerCase(), pI = document.getElementById('lPass').value.trim();
             const acc = window.uStore.find(x => x && x.user && x.user.toLowerCase() === uI);
-            if(!acc || acc.pass !== pI) { 
-                errBox.innerText = "Tài khoản hoặc mật khẩu không chính xác!"; 
-                errBox.classList.remove('hidden'); 
+            if(!acc || acc.pass !== pI) { 
+                errBox.innerText = "Tài khoản hoặc mật khẩu không chính xác!"; 
+                errBox.classList.remove('hidden'); 
                 errBox.classList.add('animate__animated', 'animate__headShake');
                 setTimeout(() => errBox.classList.remove('animate__animated', 'animate__headShake'), 600);
-                return; 
+                return; 
             }
             if(acc.isFrozen === true) { errBox.innerText = "Tài khoản của bạn tạm thời bị đóng băng!"; errBox.classList.remove('hidden'); return; }
             try {
@@ -479,19 +535,49 @@
             document.getElementById('loginPage').style.display='none'; document.getElementById('mainUI').style.display='flex'; renderUI();
         }
 
-        function handleLogout() { 
-            Swal.fire({ title: 'Xác nhận thoát?', text: "Bạn có chắc chắn muốn đăng xuất?", icon: 'question', showCancelButton: true }).then((r) => { if(r.isConfirmed){ localStorage.clear(); window.location.reload(); } }); 
+        function handleLogout() { 
+            Swal.fire({ title: 'Xác nhận thoát?', text: "Bạn có chắc chắn muốn đăng xuất?", icon: 'question', showCancelButton: true }).then((r) => { if(r.isConfirmed){ localStorage.clear(); window.location.reload(); } }); 
         }
 
         function renderUI() {
-            document.getElementById('topName').innerText = window.curU.name; document.getElementById('dashName').innerText = window.curU.name; 
+            document.getElementById('topName').innerText = window.curU.name; document.getElementById('dashName').innerText = window.curU.name; 
             document.getElementById('topAvatar').src = `https://ui-avatars.com/api/?name=${window.curU.name}&background=0ea5e9&color=fff`;
+            
+            const badge = document.getElementById('roleBadge');
             const nav = document.getElementById('mainNav'), hh = document.getElementById('historyTable');
+            
             if(window.curU.role === 'ADMIN') {
-                nav.innerHTML = `<div onclick="switchTab('a-dash')" class="sidebar-item active"><i class="fas fa-chart-pie mr-3 w-4 text-center"></i>Bảng điều khiển</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-list-check mr-3 w-4 text-center"></i>Quản lý hoàn tiền</div><div onclick="switchTab('a-users')" class="sidebar-item"><i class="fas fa-user-gear mr-3 w-4 text-center"></i>Quản lý thành viên</div><div onclick="switchTab('a-logs')" class="sidebar-item"><i class="fas fa-network-wired mr-3 w-4 text-center"></i>Nhật ký kết nối</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-shield-halved mr-3 w-4 text-center"></i>Đổi mật khẩu</div>`;
-                hh.innerHTML = `<thead><tr><th class="col-user">Khởi tạo</th><th class="col-name">Chủ tài khoản</th><th class="col-bank">Ngân hàng</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền</th><th class="col-time">Thời gian gửi</th><th class="col-status">Trạng thái</th><th class="col-action text-center">Hành động</th></tr></thead>`;
+                document.getElementById('user-chat-widget').classList.add('hidden');
+                if(window.curU.id === 'admin_chinh') {
+                    badge.innerText = "ADMIN TỔNG";
+                    badge.className = "px-1.5 py-0.5 rounded text-[9px] font-black tracking-wide uppercase bg-red-500 text-white";
+                    document.getElementById('lbl-stat-users').innerText = "Tổng Thành viên";
+                } else {
+                    badge.innerText = "ADMIN CON";
+                    badge.className = "px-1.5 py-0.5 rounded text-[9px] font-black tracking-wide uppercase bg-amber-500 text-slate-900";
+                    document.getElementById('lbl-stat-users').innerText = "Thành viên của tôi";
+                }
+
+                // TÍCH HỢP TAB CHAT MỚI: Mở Tab Live Chat (a-chat-hub) vào Menu cho Admin
+                let adminMenuHtml = `
+                    <div onclick="switchTab('a-dash')" class="sidebar-item active"><i class="fas fa-chart-pie mr-3 w-4 text-center"></i>Bảng điều khiển</div>
+                    <div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-list-check mr-3 w-4 text-center"></i>Quản lý hoàn tiền</div>
+                    <div onclick="switchTab('a-chat-hub')" class="sidebar-item"><i class="fas fa-comment-sms mr-3 w-4 text-center"></i>Hộp thoại Live Chat</div>
+                    <div onclick="switchTab('a-users')" class="sidebar-item"><i class="fas fa-user-gear mr-3 w-4 text-center"></i>Quản lý thành viên</div>
+                    <div onclick="switchTab('a-logs')" class="sidebar-item"><i class="fas fa-network-wired mr-3 w-4 text-center"></i>Nhật ký kết nối</div>
+                    <div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-shield-halved mr-3 w-4 text-center"></i>Đổi mật khẩu</div>`;
+                
+                nav.innerHTML = adminMenuHtml;
+                hh.innerHTML = `<thead><tr><th class="col-user">Khởi tạo</th><th class="col-name">Chủ tài khoản</th><th class="col-bank">Ngân hàng</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền</th><th class="col-time">Thời gian gửi</th><th class="col-status">Trạng thái</th><th class="col-handler">Người duyệt</th><th class="col-action text-center">Hành động</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.remove('hidden');
             } else {
+                badge.innerText = "USER";
+                badge.className = "px-1.5 py-0.5 rounded text-[9px] font-black tracking-wide uppercase bg-sky-600 text-white";
+                
+                // Mở bong bóng Chat cho tài khoản khách hàng
+                document.getElementById('user-chat-widget').classList.remove('hidden');
+                setupUserChatRealtime();
+
                 nav.innerHTML = `<div onclick="switchTab('u-dash')" class="sidebar-item active"><i class="fas fa-home mr-3 w-4 text-center"></i>Trang tổng quan</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center"></i>Lịch sử rút tiền</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Cấu hình bảo mật</div>`;
                 hh.innerHTML = `<thead><tr><th class="col-name">Chủ TK thụ hưởng</th><th class="col-bank">Ngân hàng nhận</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền hoàn</th><th class="col-time">Thời gian khởi tạo</th><th class="col-status">Trạng thái</th><th class="col-reason">Phản hồi hệ thống</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.add('hidden');
@@ -508,31 +594,38 @@
             const fOrderStatus = document.getElementById('filterOrderStatus') ? document.getElementById('filterOrderStatus').value : 'ALL';
 
             if(window.curU.role === 'ADMIN') {
-                const pndCount = window.dStore.filter(o => o.status === 'ĐANG CHỜ').length;
-                const appCount = window.dStore.filter(o => o.status === 'ĐÃ DUYỆT').length;
-                const rejCount = window.dStore.filter(o => o.status === 'TỪ CHỐI').length;
+                let allowedOrders = window.dStore;
+                if(window.curU.id !== 'admin_chinh') {
+                    const mySubUserIds = window.uStore.filter(u => u.parentId === window.curU.id).map(u => u.id);
+                    allowedOrders = window.dStore.filter(o => o.userId === window.curU.id || mySubUserIds.includes(o.userId));
+                }
 
-                // THÊM: Tính toán số tiền cộng dồn của các đơn hàng có trạng thái "ĐÃ DUYỆT"
-                const totalApprovedMoney = window.dStore
+                const pndCount = allowedOrders.filter(o => o.status === 'ĐANG CHỜ').length;
+                const appCount = allowedOrders.filter(o => o.status === 'ĐÃ DUYỆT').length;
+                const rejCount = allowedOrders.filter(o => o.status === 'TỪ CHỐI').length;
+
+                const totalApprovedMoney = allowedOrders
                     .filter(o => o.status === 'ĐÃ DUYỆT' && o.money)
                     .reduce((sum, o) => sum + Number(o.money), 0);
 
-                document.getElementById('stat-users').innerText = window.uStore.length;
-                document.getElementById('stat-orders').innerText = window.dStore.length;
+                let filteredUsers = window.uStore.filter(u => u && u.id);
+                if(window.curU.id !== 'admin_chinh') {
+                    filteredUsers = filteredUsers.filter(u => u.parentId === window.curU.id);
+                }
+
+                document.getElementById('stat-users').innerText = filteredUsers.length;
+                document.getElementById('stat-orders').innerText = allowedOrders.length;
                 document.getElementById('stat-pending').innerText = pndCount;
-                
-                // CẬP NHẬT: Gán giá trị tổng số tiền thực tế vào ô thống kê Dashboard
                 document.getElementById('stat-money').innerText = totalApprovedMoney.toLocaleString() + ' đ';
                 
                 if(document.getElementById('lbl-pnd-count')) document.getElementById('lbl-pnd-count').innerText = pndCount;
                 if(document.getElementById('lbl-app-count')) document.getElementById('lbl-app-count').innerText = appCount;
                 if(document.getElementById('lbl-rej-count')) document.getElementById('lbl-rej-count').innerText = rejCount;
 
-                let filteredUsers = window.uStore.filter(u => u && u.id);
                 if(fUserRole !== 'ALL') { filteredUsers = filteredUsers.filter(u => u.role === fUserRole); }
                 if(sUserKey !== '') {
-                    filteredUsers = filteredUsers.filter(u => 
-                        (u.name && u.name.toLowerCase().includes(sUserKey)) || 
+                    filteredUsers = filteredUsers.filter(u => 
+                        (u.name && u.name.toLowerCase().includes(sUserKey)) || 
                         (u.user && u.user.toLowerCase().includes(sUserKey))
                     );
                 }
@@ -540,15 +633,86 @@
                 if(filteredUsers.length === 0) {
                     document.getElementById('u-list-body').innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-user-slash mr-2 text-base"></i> Không tìm thấy thành viên phù hợp</td></tr>`;
                 } else {
-                    document.getElementById('u-list-body').innerHTML = filteredUsers.map(u => `<tr>
-                        <td class="col-name font-bold text-slate-700">${u.name}</td><td class="col-user text-slate-500 font-semibold">${u.user}</td><td class="col-status"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] ${u.role==='ADMIN'?'bg-purple-50 text-purple-600 border border-purple-100':'bg-sky-50 text-sky-600 border border-sky-100'}">${u.role}</span></td><td class="col-status font-mono text-slate-600 font-medium">${u.pass}</td>
-                        <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {isFrozen: !${u.isFrozen}}); window.showToast('Cập nhật trạng thái thành công')" class="text-2xl transition-transform duration-200 active:scale-90 ${u.isFrozen?'text-rose-500':'text-emerald-500'}"><i class="fas ${u.isFrozen?'fa-toggle-off':'fa-toggle-on'}"></i></button></td>
-                        <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {canWithdraw: !${u.canWithdraw}, needVerify: false, verifyMsg: ''}); window.showToast('Cập nhật quyền rút tiền thành công')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all duration-200 active:scale-95 ${u.canWithdraw?'text-emerald-600 border-emerald-200 bg-emerald-50':'text-amber-600 border-amber-200 bg-amber-50'}">${u.canWithdraw?'Mở Khóa':'Đang Khóa'}</button></td>
-                        <td class="col-action text-center space-x-2"><button onclick="openUMFolder('editU', '${u.id}')" class="text-amber-600 hover:text-amber-700 font-bold text-xs uppercase hover:underline">Sửa</button><button onclick="delU('${u.id}')" class="text-rose-500 hover:text-rose-600 font-bold text-xs uppercase hover:underline">Xóa</button></td>
-                    </tr>`).join('');
+                    document.getElementById('u-list-body').innerHTML = filteredUsers.map(u => {
+                        let roleTagHtml = '';
+                        if(u.role === 'ADMIN') {
+                            roleTagHtml = `<span class="px-2 py-0.5 rounded font-bold text-[9px] bg-amber-100 text-amber-700 border border-amber-200">ADMIN CON</span>`;
+                        } else {
+                            roleTagHtml = `<span class="px-2 py-0.5 rounded font-bold text-[9px] bg-sky-50 text-sky-600 border border-sky-100">USER</span>`;
+                        }
+                        if(u.id === 'admin_chinh') roleTagHtml = `<span class="px-2 py-0.5 rounded font-bold text-[9px] bg-rose-100 text-rose-700 border border-rose-200">ADMIN TỔNG</span>`;
+
+                        return `<tr>
+                            <td class="col-name font-bold text-slate-700">${u.name}</td><td class="col-user text-slate-500 font-semibold">${u.user}</td><td class="col-status">${roleTagHtml}</td><td class="col-status font-mono text-slate-600 font-medium">${u.pass}</td>
+                            <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {isFrozen: !${u.isFrozen}}); window.showToast('Cập nhật trạng thái thành công')" class="text-2xl transition-transform duration-200 active:scale-90 ${u.isFrozen?'text-rose-500':'text-emerald-500'}"><i class="fas ${u.isFrozen?'fa-toggle-off':'fa-toggle-on'}"></i></button></td>
+                            <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {canWithdraw: !${u.canWithdraw}, needVerify: false, verifyMsg: ''}); window.showToast('Cập nhật quyền rút tiền thành công')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all duration-200 active:scale-95 ${u.canWithdraw?'text-emerald-600 border-emerald-200 bg-emerald-50':'text-amber-600 border-amber-200 bg-amber-50'}">${u.canWithdraw?'Mở Khóa':'Đang Khóa'}</button></td>
+                            <td class="col-action text-center space-x-2">
+                                <button onclick="openUMFolder('editU', '${u.id}')" class="text-amber-600 hover:text-amber-700 font-bold text-xs uppercase hover:underline">Sửa</button>
+                                ${u.id !== 'admin_chinh' ? `<button onclick="delU('${u.id}')" class="text-rose-500 hover:text-rose-600 font-bold text-xs uppercase hover:underline">Xóa</button>` : ''}
+                            </td>
+                        </tr>`;
+                    }).join('');
                 }
 
-                if(document.getElementById('l-list-body')) document.getElementById('l-list-body').innerHTML = window.lStore.map(l => `<tr><td class="col-user font-bold text-slate-700">${l.name}</td><td class="col-acc font-mono text-sky-600 font-semibold">${l.ip}</td><td class="col-bank text-slate-600">${l.city}</td><td class="col-status text-slate-500 font-medium">${l.device}</td><td class="col-time text-slate-400 font-medium">${l.time}</td></tr>`).join('');
+                // LIVE CHAT PHÂN QUYỀN: Cập nhật danh sách phòng chat hiển thị bên thanh trái Admin
+                // Admin Tổng thấy mọi User hệ thống, Admin Con chỉ thấy User do mình phụ trách
+                const chatUsersList = window.uStore.filter(u => u.role === 'USER' && (window.curU.id === 'admin_chinh' || u.parentId === window.curU.id));
+                const listChatContainer = document.getElementById('chat-list-users');
+                if(listChatContainer) {
+                    if(chatUsersList.length === 0) {
+                        listChatContainer.innerHTML = `<div class="p-5 text-center text-xs text-slate-400 font-semibold">Chưa có thành viên nào nhắn tin</div>`;
+                    } else {
+                        listChatContainer.innerHTML = chatUsersList.map(u => `
+                            <div onclick="openAdminChatRoom('${u.id}', '${u.name}')" id="chat-item-${u.id}" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-slate-100 transition-colors bg-white">
+                                <img src="https://ui-avatars.com/api/?name=${u.name}&background=ebd7ff&color=7c3aed" class="w-9 h-9 rounded-xl">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-xs text-slate-700 truncate uppercase">${u.name}</p>
+                                    <p class="text-[10px] text-slate-400 truncate mt-0.5 font-medium">Ấn vào để xem tin nhắn</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+
+                const allowedUsernames = filteredUsers.map(u => u.name);
+                let allowedLogs = window.lStore;
+                if(window.curU.id !== 'admin_chinh') {
+                    allowedLogs = window.lStore.filter(l => allowedUsernames.includes(l.name) || l.name === window.curU.name);
+                }
+
+                if(document.getElementById('l-list-body')) document.getElementById('l-list-body').innerHTML = allowedLogs.map(l => `<tr><td class="col-user font-bold text-slate-700">${l.name}</td><td class="col-acc font-mono text-sky-600 font-semibold">${l.ip}</td><td class="col-bank text-slate-600">${l.city}</td><td class="col-status text-slate-500 font-medium">${l.device}</td><td class="col-time text-slate-400 font-medium">${l.time}</td></tr>`).join('');
+            
+                let ds = allowedOrders;
+                if(fOrderStatus !== 'ALL') { ds = ds.filter(i => i.status === fOrderStatus); }
+                if(sOrderKey !== '') {
+                    ds = ds.filter(i => 
+                        (i.owner && i.owner.toLowerCase().includes(sOrderKey)) || 
+                        (i.acc && i.acc.toLowerCase().includes(sOrderKey)) || 
+                        (i.bank && i.bank.toLowerCase().includes(sOrderKey)) || 
+                        (i.code && i.code.toLowerCase().includes(sOrderKey)) ||
+                        (i.creatorUser && i.creatorUser.toLowerCase().includes(sOrderKey))
+                    );
+                }
+
+                const tb = document.getElementById('table-body');
+                if(ds.filter(i => i.owner).length === 0) {
+                    tb.innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-folder-open mr-2 text-base"></i> Không có dữ liệu lệnh hoàn tiền phù hợp</td></tr>`;
+                } else {
+                    tb.innerHTML = ds.filter(i => i.owner).map(i => {
+                        let handlerInfo = `<span class="text-slate-400 italic font-normal text-xs">Chưa xử lý</span>`;
+                        if(i.handlerName && i.handleTime) {
+                            handlerInfo = `<div class="flex flex-col text-left leading-tight"><span class="text-indigo-600 font-black uppercase text-[11px] truncate"><i class="fas fa-user-check mr-1 text-[10px]"></i>${i.handlerName}</span><span class="text-slate-400 font-medium font-mono text-[10px] mt-0.5">${i.handleTime}</span></div>`;
+                        } else if(i.handlerName) {
+                            handlerInfo = `<div class="flex flex-col text-left leading-tight"><span class="text-indigo-600 font-black uppercase text-[11px] truncate"><i class="fas fa-user-check mr-1 text-[10px]"></i>${i.handlerName}</span></div>`;
+                        }
+                        
+                        return `<tr>
+                            <td class="col-user text-indigo-600 font-bold">${i.creatorUser || 'Khách'}</td><td class="col-name uppercase font-bold text-slate-700">${i.owner}</td><td class="col-bank text-slate-600">${i.bank}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${i.acc}</div></td><td class="col-code uppercase font-bold text-slate-700"><div class="overflow-x-auto scroller">${i.code}</div></td><td class="col-money text-rose-600 font-black">${Number(i.money || 0).toLocaleString()}đ</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500 animate-pulse':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td>
+                            <td class="col-handler text-left">${handlerInfo}</td>
+                            <td class="col-action text-center space-x-1"><button onclick="openUMFolder('openBill','${i.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Duyệt</button><button onclick="openUMFolder('openO','${i.id}','TỪ CHỐI')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Từ Chối</button><button onclick="duplicateOrder('${i.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 transition active:scale-90"><i class="fas fa-copy"></i></button><button onclick="delO('${i.id}')" class="text-rose-500 hover:text-rose-600 px-1 transition active:scale-90"><i class="fas fa-trash-alt"></i></button><i onclick="openUMFolder('editEO','${i.id}')" class="fas fa-edit text-sky-400 hover:text-sky-500 cursor-pointer ml-1 text-xs transition active:scale-90"></i></td>
+                        </tr>`;
+                    }).join('');
+                }
             }
             
             if(window.curU.role === 'USER') {
@@ -585,38 +749,129 @@
                 } else if(window.curU.canWithdraw === true) {
                     gBox.classList.remove('hidden');
                 }
-            }
 
-            const tb = document.getElementById('table-body');
-            let ds = (window.curU.role === 'ADMIN') ? window.dStore : window.dStore.filter(x => x && x.userId === window.curU.id);
-            
-            if(window.curU.role === 'ADMIN') {
-                if(fOrderStatus !== 'ALL') { ds = ds.filter(i => i.status === fOrderStatus); }
-                if(sOrderKey !== '') {
-                    ds = ds.filter(i => 
-                        (i.owner && i.owner.toLowerCase().includes(sOrderKey)) || 
-                        (i.acc && i.acc.toLowerCase().includes(sOrderKey)) || 
-                        (i.bank && i.bank.toLowerCase().includes(sOrderKey)) || 
-                        (i.code && i.code.toLowerCase().includes(sOrderKey)) ||
-                        (i.creatorUser && i.creatorUser.toLowerCase().includes(sOrderKey))
-                    );
-                }
-            }
-
-            if(ds.filter(i => i.owner).length === 0) {
-                const spanCols = (window.curU.role === 'ADMIN') ? 9 : 8;
-                tb.innerHTML = `<tr><td colspan="${spanCols}" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-folder-open mr-2 text-base"></i> Không có dữ liệu lệnh hoàn tiền phù hợp</td></tr>`;
-            } else {
-                tb.innerHTML = ds.filter(i => i.owner).map(i => {
-                    if (window.curU.role === 'ADMIN') {
-                        return `<tr><td class="col-user text-indigo-600 font-bold">${i.creatorUser || 'Khách'}</td><td class="col-name uppercase font-bold text-slate-700">${i.owner}</td><td class="col-bank text-slate-600">${i.bank}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${i.acc}</div></td><td class="col-code uppercase font-bold text-slate-700"><div class="overflow-x-auto scroller">${i.code}</div></td><td class="col-money text-rose-600 font-black">${Number(i.money || 0).toLocaleString()}đ</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500 animate-pulse':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-action text-center space-x-1"><button onclick="openUMFolder('openBill','${i.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Duyệt</button><button onclick="openUMFolder('openO','${i.id}','TỪ CHỐI')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Từ Chối</button><button onclick="duplicateOrder('${i.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 transition active:scale-90"><i class="fas fa-copy"></i></button><button onclick="delO('${i.id}')" class="text-rose-500 hover:text-rose-600 px-1 transition active:scale-90"><i class="fas fa-trash-alt"></i></button><i onclick="openUMFolder('editEO','${i.id}')" class="fas fa-edit text-sky-400 hover:text-sky-500 cursor-pointer ml-1 text-xs transition active:scale-90"></i></td></tr>`;
-                    } else {
+                const tb = document.getElementById('table-body');
+                let ds = window.dStore.filter(x => x && x.userId === window.curU.id);
+                if(ds.filter(i => i.owner).length === 0) {
+                    tb.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-folder-open mr-2 text-base"></i> Không có dữ liệu lệnh hoàn tiền phù hợp</td></tr>`;
+                } else {
+                    tb.innerHTML = ds.filter(i => i.owner).map(i => {
                         let v = (i.status !== 'ĐANG CHỜ');
                         return `<tr><td class="col-name uppercase font-bold text-slate-700">${v?i.owner:'***'}</td><td class="col-bank text-slate-600">${v?i.bank:'***'}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${v?i.acc:'***'}</div></td><td class="col-code uppercase font-semibold text-slate-700"><div class="overflow-x-auto scroller">${v?i.code:'***'}</div></td><td class="col-money text-rose-600 font-black">${v?Number(i.money || 0).toLocaleString()+'đ':'***'}</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-reason italic text-slate-400 font-medium">${i.reason}</td></tr>`;
-                    }
-                }).join('');
+                    }).join('');
+                }
             }
         }
+
+        /* ---------------- LOGIC LIVE CHAT HỆ THỐNG REALTIME ---------------- */
+        function toggleUserChatBox() {
+            const chatBox = document.getElementById('user-chat-box');
+            chatBox.classList.toggle('hidden');
+            document.getElementById('user-chat-badge').classList.add('hidden');
+            if(!chatBox.classList.contains('hidden')) {
+                setTimeout(() => {
+                    const box = document.getElementById('user-chat-messages-box');
+                    box.scrollTop = box.scrollHeight;
+                }, 100);
+            }
+        }
+
+        function setupUserChatRealtime() {
+            window.listenChatRoom(window.curU.id, (snapshot) => {
+                const data = snapshot.val();
+                const box = document.getElementById('user-chat-messages-box');
+                if(!box) return;
+                
+                if(!data) {
+                    box.innerHTML = `<div class="text-center p-3 text-slate-400 italic font-medium">Hệ thống đã sẵn sàng hỗ trợ, hãy gửi tin nhắn cho chúng tôi nếu bạn có thắc mắc!</div>`;
+                    return;
+                }
+                
+                const currentBoxStatus = document.getElementById('user-chat-box').classList.contains('hidden');
+                if(currentBoxStatus) {
+                    document.getElementById('user-chat-badge').classList.remove('hidden');
+                }
+
+                const msgArr = Object.values(data);
+                box.innerHTML = msgArr.map(m => {
+                    const isMe = m.senderId === window.curU.id;
+                    return `
+                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'} animate__animated animate__fadeIn animate__fast">
+                            <div class="max-w-[75%] rounded-2xl px-3.5 py-2 text-xs font-semibold leading-relaxed shadow-sm ${isMe ? 'bg-sky-600 text-white rounded-br-none' : 'bg-white text-slate-700 rounded-bl-none border border-slate-100'}">
+                                <p class="break-words">${m.text}</p>
+                                <span class="block text-[8px] mt-1 text-right font-normal font-mono ${isMe ? 'text-sky-200' : 'text-slate-400'}">${m.time}</span>
+                            </div>
+                        </div>`;
+                }).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+        }
+
+        function sendUserChat() {
+            const inp = document.getElementById('user-chat-input');
+            const txt = inp.value.trim();
+            if(!txt) return;
+            window.sendChatMessage(window.curU.id, {
+                senderId: window.curU.id,
+                senderName: window.curU.name,
+                text: txt,
+                time: window.getVNTime().split(' ')[0] // Lấy mốc giờ phút
+            });
+            inp.value = '';
+        }
+
+        window.openAdminChatRoom = (userId, userName) => {
+            window.activeChatRoom = userId;
+            document.getElementById('chat-window-blank').classList.add('hidden');
+            document.getElementById('chat-window-active').classList.remove('hidden');
+            document.getElementById('chat-title-name').innerText = userName;
+            
+            // Xử lý background màu sắc active cho danh sách cuộc trò chuyện
+            document.querySelectorAll('#chat-list-users > div').forEach(el => el.classList.remove('bg-indigo-50/70', 'border-l-4', 'border-indigo-500'));
+            const targetItem = document.getElementById('chat-item-' + userId);
+            if(targetItem) targetItem.classList.add('bg-indigo-50/70', 'border-l-4', 'border-indigo-500');
+
+            window.listenChatRoom(userId, (snapshot) => {
+                if(window.activeChatRoom !== userId) return;
+                const data = snapshot.val();
+                const box = document.getElementById('chat-admin-messages-box');
+                
+                if(!data) {
+                    box.innerHTML = `<div class="text-center py-12 text-slate-400 italic text-xs font-semibold">Chưa có nội dung cuộc hội thoại</div>`;
+                    return;
+                }
+
+                const msgArr = Object.values(data);
+                box.innerHTML = msgArr.map(m => {
+                    const isMe = m.senderId === window.curU.id;
+                    return `
+                        <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                            <div class="max-w-[70%] rounded-2xl px-4 py-2.5 text-xs font-bold shadow-sm ${isMe ? 'bg-sky-600 text-white rounded-tr-none' : 'bg-white text-slate-700 border border-slate-200/60 rounded-tl-none'}">
+                                <span class="block text-[9px] uppercase tracking-wider font-extrabold mb-0.5 ${isMe ? 'text-sky-200' : 'text-indigo-600'}">${m.senderName}</span>
+                                <p class="break-words leading-relaxed font-semibold font-sans">${m.text}</p>
+                                <span class="block text-[8px] mt-1 text-right font-normal font-mono ${isMe ? 'text-sky-200' : 'text-slate-400'}">${m.time}</span>
+                            </div>
+                        </div>`;
+                }).join('');
+                box.scrollTop = box.scrollHeight;
+            });
+        };
+
+        function sendAdminChat() {
+            if(!window.activeChatRoom) return;
+            const inp = document.getElementById('chat-admin-input');
+            const txt = inp.value.trim();
+            if(!txt) return;
+
+            window.sendChatMessage(window.activeChatRoom, {
+                senderId: window.curU.id,
+                senderName: window.curU.name,
+                text: txt,
+                time: window.getVNTime().split(' ')[0]
+            });
+            inp.value = '';
+        }
+        /* ------------------------------------------------------------------ */
 
         window.openVerificationModal = () => {
             const rawBank = (window.curU.adminVerifyBank || '').trim().toLowerCase();
@@ -665,7 +920,8 @@
             if(confirm("Xác nhận nhân đôi yêu cầu lệnh giao dịch này?")) {
                 const i = window.dStore.find(x => x && x.id === id); if(!i) return;
                 const newOrder = {...i, status: 'ĐANG CHỜ', reason: 'Đang xét duyệt...', time: window.getVNTime()}; 
-                delete newOrder.id; await window.saveOrderToCloud(newOrder); window.showToast("Nhân đôi lệnh thành công!");
+                delete newOrder.id; delete newOrder.handlerName; delete newOrder.handlerId; delete newOrder.handleTime;
+                await window.saveOrderToCloud(newOrder); window.showToast("Nhân đôi lệnh thành công!");
             }
         };
 
@@ -691,8 +947,23 @@
             const all = window.uStore || [];
             const isDup = all.find(x => x && x.user && x.user.toLowerCase() === u && x.id !== id);
             if (isDup) return Swal.fire("Lỗi", "Tên tài khoản đăng nhập này đã tồn tại!", "error");
+            
             const ex = all.find(x => x && x.id === id) || {};
-            const data = { id: id || 'u_'+Date.now(), name: n.toUpperCase(), user: u, pass: p, role: r, canWithdraw: (ex.canWithdraw !== undefined) ? ex.canWithdraw : true, isFrozen: (ex.isFrozen !== undefined) ? ex.isFrozen : false, needVerify: (ex.needVerify !== undefined) ? ex.needVerify : false, verifyMsg: ex.verifyMsg || '', successBill: ex.successBill || null };
+            const finalParentId = id ? (ex.parentId || "admin_chinh") : window.curU.id;
+
+            const data = { 
+                id: id || 'u_'+Date.now(), 
+                name: n.toUpperCase(), 
+                user: u, 
+                pass: p, 
+                role: r, 
+                parentId: finalParentId, 
+                canWithdraw: (ex.canWithdraw !== undefined) ? ex.canWithdraw : true, 
+                isFrozen: (ex.isFrozen !== undefined) ? ex.isFrozen : false, 
+                needVerify: (ex.needVerify !== undefined) ? ex.needVerify : false, 
+                verifyMsg: ex.verifyMsg || '', 
+                successBill: ex.successBill || null 
+            };
             await window.saveUserToCloud(data); closeModal('userFolder'); window.showToast("Cập nhật thành viên thành công!");
         };
 
@@ -705,9 +976,9 @@
             const noteInp = document.getElementById('oAdminNote').value.trim();
 
             if(!r) return Swal.fire("Lỗi", "Vui lòng nhập đầy đủ lý do từ chối đơn hàng!", "error");
-            
             const ord = window.dStore.find(x=>x && x.id===id); 
-            await window.updateOrderCloud(id, {status: s, reason: r});
+            
+            await window.updateOrderCloud(id, {status: s, reason: r, handlerName: window.curU.name, handlerId: window.curU.id, handleTime: window.getVNTime()});
             
             if(s==='TỪ CHỐI' && ord) {
                 await window.updateUserCloud(ord.userId, {
@@ -730,7 +1001,9 @@
         window.confirmBillSubmit = async () => {
             const id = document.getElementById('billId').value, ord = window.dStore.find(x=>x && x.id===id);
             const bill = { name: document.getElementById('bName').value, bank: document.getElementById('bBank').value, acc: document.getElementById('bAcc').value, money: document.getElementById('bMoney').value, note: document.getElementById('bNote').value };
-            await window.updateOrderCloud(id, { status: 'ĐÃ DUYỆT', reason: 'Thành công.' });
+            
+            await window.updateOrderCloud(id, { status: 'ĐÃ DUYỆT', reason: 'Thành công.', handlerName: window.curU.name, handlerId: window.curU.id, handleTime: window.getVNTime() });
+            
             if(ord) await window.updateUserCloud(ord.userId, { successBill: bill, canWithdraw: false, needVerify: false, verifyMsg: '' });
             closeModal('billFolder'); window.showToast("Phê duyệt biên lai thành công!");
         };
