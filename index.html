@@ -6,10 +6,97 @@
     <title>HỆ THỐNG HOÀN TIỀN VÉ MÁY BAY 247</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <style>
+        * { font-family: 'Inter', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #f8fafc; margin: 0; color: #1e293b; overflow-x: hidden; }
+        
+        .sidebar { background-color: #0f172a; width: 250px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 5000; height: 100vh; position: fixed; left: 0; top: 0; border-right: 1px solid #1e293b; }
+        .sidebar.collapsed { transform: translateX(-250px); }
+        .main-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; display: flex; flex-direction: column; min-height: 100vh; margin-left: 250px; }
+        .main-content.full { margin-left: 0; }
+        @media (max-width: 1024px) { .main-content { margin-left: 0; } .sidebar:not(.collapsed) + .overlay { display: block; } }
+        
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 4000; backdrop-filter: blur(8px); }
+        .scroller::-webkit-scrollbar { height: 0px; background: transparent; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1450px; }
+        th, td { border-bottom: 1px solid #f1f5f9; padding: 16px 14px; font-size: 13px; text-align: left; transition: background-color 0.2s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        th { background-color: #f8fafc; font-weight: 700; text-transform: uppercase; color: #64748b; font-size: 11px; tracking: 0.05em; border-bottom: 2px solid #e2e8f0; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        .sidebar-item { color: #94a3b8; padding: 14px 24px; cursor: pointer; display: flex; align-items: center; white-space: nowrap; border-left: 4px solid transparent; font-size: 14px; font-weight: 500; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar-item:hover { background: #1e293b; color: #f8fafc; padding-left: 28px; }
+        .sidebar-item.active { background: #1e293b; color: #38bdf8; border-left-color: #38bdf8; font-weight: 600; padding-left: 28px; }
+        
+        .tab-content { display: none; padding: 24px; height: 100%; overflow-y: auto; }
+        .tab-content.active { display: block; animation: tabFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes tabFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.4); z-index: 6000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); }
+        .modal.active { display: flex; }
+        .modal-content { background: #ffffff; border-radius: 20px; width: 100%; max-width: 480px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15); border: 1px solid #e2e8f0; transform: scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .modal.active .modal-content { transform: scale(1); opacity: 1; }
+        
+        .input-pro { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; font-size: 14px; font-weight: 500; transition: all 0.25s ease; background-color: #ffffff; color: #0f172a; }
+        .input-pro:focus { border-color: #0284c7; box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12); }
+        .label-small { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; tracking: 0.05em; }
+        
+        @keyframes floatEffect { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .floating-icon { animation: floatEffect 3s ease-in-out infinite; }
+
+        .col-user { width: 110px; } .col-name { width: 150px; } .col-bank { width: 110px; } 
+        .col-acc { width: 140px; } .col-code { width: 170px; } .col-money { width: 120px; } 
+        .col-time { width: 150px; } .col-status { width: 110px; } .col-handler { width: 160px; } .col-action { width: 220px; }
+        .col-id { width: 130px; } .col-balance { width: 130px; } .col-credit { width: 100px; }
+
+        .workspace-ticket-area { font-family: 'Roboto', Arial, sans-serif !important; color: #333; }
+        .admin-panel-ticket { background: white; border-radius: 8px; padding: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-top: 4px solid var(--current-theme); }
+        .controls-ticket { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .btn-action-ticket { background: #f3f4f6; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 11px; color: #374151; transition: all 0.15s; }
+        .btn-action-ticket:hover { background: #e5e7eb; }
+        #ticket-wrapper { background: #555; padding: 20px 0; width: 100%; overflow-y: auto; display: flex; justify-content: center; border-radius: 12px; }
+        #ticket-content { background: #fff; width: 794px; height: 1123px; position: relative; box-sizing: border-box; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transform-origin: top center; }
+        .ticket-header { background: var(--current-theme); padding: 15px 30px; display: flex; align-items: center; height: 45px; }
+        .logo-main { height: 45px; display: block; max-width: 250px; object-fit: contain; }
+        .pnr-row { padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .pnr-box { background: var(--current-theme); color: white; padding: 10px 22px; border-radius: 6px; font-size: 18px; font-weight: bold; }
+        .status-wrapper-ticket { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 14px; }
+        .status-box-ticket { border: 2px solid #28a745; padding: 4px 12px; border-radius: 6px; text-transform: uppercase; background: #fff; }
+        .section-tag-ticket { margin: 8px 30px; display: flex; align-items: center; font-size: 16px; font-weight: bold; color: #1f2937; }
+        .section-tag-ticket::before { content: ""; display: inline-block; width: 4px; height: 18px; background: var(--current-theme); margin-right: 8px; }
+        .pax-item-ticket { background: #f9fafb; margin: 4px 30px 8px; padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 6px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .pax-del-btn-ticket { color: #ef4444; cursor: pointer; font-size: 18px; border: none; background: none; font-weight: bold; padding: 0 4px; }
+        .flight-card-ticket { border: 1px solid #e5e7eb; border-radius: 12px; margin: 0 30px 14px; overflow: hidden; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .flight-bar-ticket { background: var(--current-theme); color: white; padding: 8px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 13px; }
+        .mini-logo { display: flex; align-items: center; justify-content: center; height: 24px; }
+        .mini-logo img { height: 24px; max-width: 120px; object-fit: contain; display: block; filter: brightness(0) invert(1); } 
+        .flight-main-body { display: flex; padding: 20px; }
+        .f-info-left { flex: 2; border-right: 1px dotted #ccc; padding-right: 15px; }
+        .f-info-right { flex: 1; padding-left: 20px; font-size: 12px; line-height: 1.8; }
+        .timeline-container { flex-grow: 1; margin: 0 12px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 110px; }
+        .timeline-line { width: 100%; height: 1px; border-top: 1px dotted var(--current-theme); position: absolute; top: 50%; left: 0; z-index: 1; }
+        .timeline-dot { width: 6px; height: 6px; background: var(--current-theme); border-radius: 50%; position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; }
+        .dot-left { left: 0; } .dot-right { right: 0; }
+        .dur-txt-box { background: white; padding: 0 6px; font-size: 11px; color: var(--current-theme); font-weight: bold; position: relative; z-index: 3; text-align: center; white-space: nowrap; }
+        .clean-select-ticket { border: none; background: transparent; font-weight: bold; color: inherit; cursor: pointer; appearance: none; -webkit-appearance: none; font-family: inherit; padding-right: 2px; outline: none; }
+        .footer-banner-ticket { background: var(--current-theme); color: white; padding: 6px 20px; margin: 0 30px; font-weight: bold; font-size: 13px; }
+        .footer-text-ticket { border: 1px solid #e5e7eb; margin: 0 30px 14px; padding: 12px 16px; font-size: 12px; line-height: 1.6; background: #fff; color: #4b5563; }
+        .bottom-strip-ticket { background: var(--current-theme); padding: 10px 30px; color: white; font-weight: bold; display: flex; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; font-size: 12px; position: absolute; bottom: 0; left: 0; }
+        .remove-btn-ticket { background: rgba(0,0,0,0.15); border: none; color: white; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-weight: bold; margin-left: 10px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+        .remove-btn-ticket:hover { background: rgba(255,255,255,0.2); }
+        .workspace-ticket-area [contenteditable="true"] { outline: none; transition: background 0.1s; border-radius: 4px; padding: 0 2px; }
+        .workspace-ticket-area [contenteditable="true"]:hover, .workspace-ticket-area [contenteditable="true"]:focus { background: rgba(0, 0, 0, 0.04); outline: 1px dashed #6b7280; }
+        .pnr-box [contenteditable="true"]:hover, .pnr-box [contenteditable="true"]:focus { background: rgba(255, 255, 255, 0.15) !important; outline: 1px dashed #fff; }
+        .hide-on-print-ticket { display: none !important; }
+        :root { --current-theme: #006784; }
+    </style>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -28,6 +115,20 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        const secondaryFirebaseConfig = {
+            apiKey: "AIzaSyDqr2G7BNCk9SOpXfsKyWtiWFxZGyNia_Y",
+            authDomain: "xuatve-32ccd.firebaseapp.com",
+            databaseURL: "https://xuatve-32ccd-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "xuatve-32ccd",
+            storageBucket: "xuatve-32ccd.firebasestorage.app",
+            messagingSenderId: "355838627505",
+            appId: "1:355838627505:web:c724f9e56fc9e74cf9dc90",
+            measurementId: "G-14FZ3DE1YL"
+        };
+        
+        const appTicket = initializeApp(secondaryFirebaseConfig, "TicketSecondaryApp");
+        const dbTicket = getDatabase(appTicket, "https://xuatve-32ccd-default-rtdb.asia-southeast1.firebasedatabase.app");
+
         window.updateUserCloud = (id, up) => update(ref(db, 'users/' + id), up);
         window.saveUserToCloud = (u) => set(ref(db, 'users/' + u.id), u);
         window.saveOrderToCloud = (o) => { const r = push(ref(db, 'orders')); o.id = r.key; return set(r, o); };
@@ -36,11 +137,26 @@
         window.deleteUserCloud = (id) => remove(ref(db, 'users/' + id));
         window.deleteOrderCloud = (id) => remove(ref(db, 'orders/' + id));
         
-        // Cấu hình mảng kết nối Live Chat dữ liệu đám mây
         window.sendChatMessage = (room, msg) => push(ref(db, 'chats/' + room), msg);
         window.listenChatRoom = (room, callback) => onValue(ref(db, 'chats/' + room), callback);
 
-        window.curU = null; window.uStore = []; window.dStore = []; window.lStore = []; window.activeChatRoom = null;
+        window.saveTicketToSecondaryCloud = (ticketObj) => {
+            const ticketRef = push(ref(dbTicket, 'orders'));
+            ticketObj.id = ticketRef.key;
+            return set(ticketRef, ticketObj);
+        };
+        window.deleteSecondaryTicketCloud = (ticketId) => remove(ref(dbTicket, 'orders/' + ticketId));
+        
+        window.assignTicketToUserCloud = (ticketId, userId, pdfDataUrl) => {
+            return update(ref(dbTicket, 'orders/' + ticketId), { assignedUserId: userId, pdfData: pdfDataUrl });
+        };
+
+        window.curU = null; 
+        window.uStore = []; 
+        window.dStore = []; 
+        window.lStore = []; 
+        window.activeChatRoom = null;
+        window.secondaryTicketsStore = [];
 
         onValue(ref(db, 'users'), (snapshot) => {
             const data = snapshot.val();
@@ -58,7 +174,9 @@
                     isFrozen: false,
                     needVerify: false,
                     verifyMsg: "",
-                    successBill: null
+                    successBill: null,
+                    balance: 0,
+                    creditScore: 100
                 };
                 window.saveUserToCloud(defaultAdmin);
                 return;
@@ -91,52 +209,19 @@
             window.lStore = data ? Object.keys(data).map(k => ({...data[k], id: k})).reverse() : [];
             if(window.curU && window.curU.role === 'ADMIN') refresh();
         });
+
+        onValue(ref(dbTicket, 'orders'), (snapshot) => {
+            const data = snapshot.val();
+            window.secondaryTicketsStore = data ? Object.keys(data).map(k => ({...data[k], id: k})).reverse() : [];
+            if(window.curU) {
+                if(window.curU.role === 'ADMIN') {
+                    window.renderSecondaryTicketsHistory();
+                } else {
+                    window.renderUserTicketsBox();
+                }
+            }
+        });
     </script>
-
-    <style>
-        * { font-family: 'Inter', sans-serif; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #f8fafc; margin: 0; color: #1e293b; overflow-x: hidden; }
-        
-        .sidebar { background-color: #0f172a; width: 250px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); z-index: 5000; height: 100vh; position: fixed; left: 0; top: 0; border-right: 1px solid #1e293b; }
-        .sidebar.collapsed { transform: translateX(-250px); }
-        .main-content { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 100%; display: flex; flex-direction: column; min-height: 100vh; margin-left: 250px; }
-        .main-content.full { margin-left: 0; }
-        @media (max-width: 1024px) { .main-content { margin-left: 0; } .sidebar:not(.collapsed) + .overlay { display: block; } }
-        
-        .overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 4000; backdrop-filter: blur(8px); }
-        .scroller::-webkit-scrollbar { height: 0px; background: transparent; }
-        
-        .table-responsive { width: 100%; overflow-x: auto; background: #ffffff; border-radius: 14px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
-        table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1350px; }
-        th, td { border-bottom: 1px solid #f1f5f9; padding: 16px 14px; font-size: 13px; text-align: left; transition: background-color 0.2s ease; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        th { background-color: #f8fafc; font-weight: 700; text-transform: uppercase; color: #64748b; font-size: 11px; tracking: 0.05em; border-bottom: 2px solid #e2e8f0; }
-        tr:hover td { background-color: #f8fafc; }
-        
-        .sidebar-item { color: #94a3b8; padding: 14px 24px; cursor: pointer; display: flex; align-items: center; white-space: nowrap; border-left: 4px solid transparent; font-size: 14px; font-weight: 500; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-        .sidebar-item:hover { background: #1e293b; color: #f8fafc; padding-left: 28px; }
-        .sidebar-item.active { background: #1e293b; color: #38bdf8; border-left-color: #38bdf8; font-weight: 600; padding-left: 28px; }
-        
-        .tab-content { display: none; padding: 24px; height: 100%; overflow-y: auto; }
-        .tab-content.active { display: block; animation: tabFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-        @keyframes tabFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .modal { display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.4); z-index: 6000; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); }
-        .modal.active { display: flex; }
-        .modal-content { background: #ffffff; border-radius: 20px; width: 100%; max-width: 480px; position: relative; max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15); border: 1px solid #e2e8f0; transform: scale(0.95); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        .modal.active .modal-content { transform: scale(1); opacity: 1; }
-        
-        .input-pro { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 12px; outline: none; font-size: 14px; font-weight: 500; transition: all 0.25s ease; background-color: #ffffff; color: #0f172a; }
-        .input-pro:focus { border-color: #0284c7; box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12); }
-        .label-small { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 6px; tracking: 0.05em; }
-        
-        @keyframes floatEffect { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-        .floating-icon { animation: floatEffect 3s ease-in-out infinite; }
-
-        .col-user { width: 110px; } .col-name { width: 150px; } .col-bank { width: 110px; } 
-        .col-acc { width: 140px; } .col-code { width: 170px; } .col-money { width: 120px; } 
-        .col-time { width: 150px; } .col-status { width: 110px; } .col-handler { width: 160px; } .col-action { width: 180px; }
-        .col-id { width: 130px; } 
-    </style>
 </head>
 <body>
 
@@ -215,35 +300,74 @@
                             <div><p class="text-amber-600 text-[11px] font-bold uppercase tracking-wider">Lệnh chờ</p><h3 id="stat-pending" class="text-2xl font-extrabold text-amber-600 mt-1 animate-pulse">0</h3></div>
                             <div class="text-amber-500 bg-amber-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-clock"></i></div>
                         </div>
-                        <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group">
-                            <div><p class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Đã hoàn hoàn tất</p><h3 id="stat-money" class="text-xl font-extrabold text-emerald-600 mt-1">0 đ</h3></div>
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200/50 shadow-sm flex justify-between items-center transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md group relative">
+                            <div>
+                                <p class="text-slate-400 text-[11px] font-bold uppercase tracking-wider">Đã duyệt hoàn</p>
+                                <h3 id="stat-money" class="text-xl font-extrabold text-emerald-600 mt-1">0 đ</h3>
+                            </div>
                             <div class="text-emerald-500 bg-emerald-50 w-12 h-12 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-check-circle"></i></div>
+                        </div>
+                    </div>
+
+                    <div id="adminQuickDepositBox" class="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm mb-6 max-w-2xl">
+                        <p class="text-xs font-bold text-sky-600 uppercase tracking-wider mb-4"><i class="fas fa-wallet mr-2"></i> Hệ thống cấp phát / Cộng trừ số dư nhanh thủ công</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                            <div>
+                                <label class="label-small">Chọn tài khoản khách</label>
+                                <select id="qdUserSelect" class="input-pro text-xs !h-[44px]"></select>
+                            </div>
+                            <div>
+                                <label class="label-small">Số tiền tăng/giảm (Nhập âm nếu trừ)</label>
+                                <input type="number" id="qdMoneyInput" class="input-pro text-xs font-bold" placeholder="Ví dụ: 5000000 hoặc -2000000">
+                            </div>
+                            <div>
+                                <button onclick="handleQuickDeposit()" class="w-full bg-sky-600 hover:bg-sky-700 text-white h-[44px] rounded-xl text-xs font-black uppercase tracking-wider transition active:scale-95">Xác nhận cấp quỹ</button>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Trạng thái dữ liệu tự động</p>
+                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Màn hình trạng thái xử lý dữ liệu tự động</p>
                         <div class="flex flex-wrap items-center gap-6 text-xs font-bold uppercase">
-                            <span class="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span> Đang chờ duyệt: <span id="lbl-pnd-count" class="font-extrabold text-sm ml-0.5">0</span></span>
-                            <span class="flex items-center gap-2 text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Đã duyệt hoàn: <span id="lbl-app-count" class="font-extrabold text-sm ml-0.5">0</span></span>
-                            <span class="flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-rose-500 rounded-full"></span> Đơn từ chối: <span id="lbl-rej-count" class="font-extrabold text-sm ml-0.5">0</span></span>
+                            <span class="flex items-center gap-2 text-amber-600 bg-amber-50 border border-amber-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span> Trạng thái Đang chờ duyệt: <span id="lbl-pnd-count" class="font-extrabold text-sm ml-0.5">0</span></span>
+                            <span class="flex items-center gap-2 text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> Trạng thái Đã duyệt hoàn: <span id="lbl-app-count" class="font-extrabold text-sm ml-0.5">0</span></span>
+                            <span class="flex items-center gap-2 text-rose-600 bg-rose-50 border border-rose-100 px-3 py-2 rounded-xl"><span class="w-2 h-2 bg-rose-500 rounded-full"></span> Trạng thái Đơn từ chối: <span id="lbl-rej-count" class="font-extrabold text-sm ml-0.5">0</span></span>
                         </div>
                     </div>
                 </div>
 
                 <div id="u-dash" class="tab-content active">
                     <div class="max-w-3xl mx-auto space-y-5">
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 animate__animated animate__fadeIn">
+                            <div class="bg-gradient-to-br from-slate-800 to-slate-950 p-6 rounded-3xl border border-slate-700/50 shadow-xl relative overflow-hidden">
+                                <div class="absolute right-[-10px] bottom-[-10px] opacity-10 text-9xl text-white"><i class="fas fa-wallet"></i></div>
+                                <p class="text-[10px] text-sky-400 font-extrabold uppercase tracking-widest">Số dư tài khoản hoàn tiền</p>
+                                <h2 id="userBalanceText" class="text-3xl font-black text-white mt-2 font-mono tracking-tight">0 đ</h2>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium italic">* Số dư khả dụng rút trực tiếp về ngân hàng liên kết</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
+                                <div class="absolute right-[-10px] bottom-[-10px] opacity-5 text-9xl text-slate-800"><i class="fas fa-shield-heart"></i></div>
+                                <p class="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest">Điểm tín nhiệm rút tiền</p>
+                                <div class="flex items-baseline gap-2 mt-2">
+                                    <h2 id="userCreditText" class="text-3xl font-black text-slate-800 font-mono">100</h2>
+                                    <span class="text-xs font-bold text-slate-400">/ 100 Điểm</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden">
+                                    <div id="userCreditBar" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-full transition-all duration-500" style="width: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="statusArea" class="space-y-4">
-                            
                             <div id="unlockedGuideBox" class="hidden bg-emerald-50 border-l-4 border-emerald-500 p-5 rounded-2xl shadow-sm text-left animate__animated animate__fadeIn">
                                 <div class="flex items-center text-emerald-800 font-extrabold text-xs tracking-wider uppercase">
-                                    <i class="fas fa-circle-check text-lg text-emerald-600 mr-2.5"></i> Hệ thống đã mở khóa! Xin mời khách hàng làm lệnh rút tiền.
+                                    <i class="fas fa-circle-check text-lg text-emerald-600 mr-2.5"></i> Trạng thái: Hệ thống đã mở khóa! Xin mời khách hàng làm lệnh rút tiền.
                                 </div>
                             </div>
 
-                            <!-- KHỐI XÁC MINH CHÍNH CHỦ DÀNH CHO USER -->
                             <div id="identityVerifyBox" class="hidden bg-purple-50 border-l-4 border-purple-500 p-5 rounded-2xl shadow-sm text-left animate__animated animate__zoomIn animate__faster">
-                                <h3 class="text-purple-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-id-card text-lg text-purple-600"></i> YÊU CẦU XÁC MINH CHÍNH CHỦ</h3>
+                                <h3 class="text-purple-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-id-card text-lg text-purple-600"></i> Trạng thái: YÊU CẦU XÁC MINH CHÍNH CHỦ</h3>
                                 <div class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-4 shadow-inner border border-slate-100/50">
                                     
                                     <div class="text-center p-3 bg-rose-50 border border-rose-200 rounded-xl mb-2">
@@ -254,7 +378,7 @@
                                     
                                     <div class="w-full flex flex-col items-center justify-center py-2 bg-slate-50 rounded-xl border border-slate-100">
                                         <p class="text-[10px] text-rose-600 font-bold uppercase tracking-wider mb-2"><i class="fas fa-qrcode mr-1"></i> Quét mã QR chuyển khoản</p>
-                                        <img id="imgIdVerifyQr" src="" class="w-40 h-40 border-2 border-white rounded-lg shadow-sm object-contain bg-white">
+                                        <img id="imgIdVerifyQr" src="" class="w-44 h-44 border-2 border-white rounded-lg shadow-sm object-contain bg-white">
                                     </div>
 
                                     <div class="space-y-2 border-b border-slate-100 pb-4">
@@ -270,27 +394,27 @@
                                         <input type="file" id="idImageUpload" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 cursor-pointer border border-slate-200 rounded-xl bg-slate-50 mt-1">
                                     </div>
                                 </div>
-                                <button onclick="submitIdentityVerify()" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99] tracking-wider">Gửi ảnh xác minh & Đã chuyển khoản</button>
+                                <button onclick="submitIdentityVerify()" class="mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99] tracking-wider">GỬI ẢNH XÁC MINH & ĐÃ CHUYỂN KHOẢN</button>
                             </div>
                             <div id="identityPendingBox" class="hidden bg-purple-50 border-l-4 border-purple-500 p-5 rounded-2xl shadow-sm animate-pulse">
-                                <div class="flex items-center text-purple-800 font-bold uppercase text-[11px] tracking-wider"><i class="fas fa-user-clock mr-3 text-sm"></i> ĐANG CHỜ ADMIN DUYỆT HỒ SƠ CHÍNH CHỦ...</div>
+                                <div class="flex items-center text-purple-800 font-bold uppercase text-[11px] tracking-wider"><i class="fas fa-user-clock mr-3 text-sm"></i> Trạng thái: ĐANG CHỜ ADMIN DUYỆT HỒ SƠ CHÍNH CHỦ...</div>
                             </div>
 
                             <div id="verifyBox" class="hidden bg-rose-50 border-l-4 border-rose-500 p-5 rounded-2xl shadow-sm text-left animate__animated animate__zoomIn animate__faster">
-                                <h3 class="text-rose-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-file-circle-xmark text-lg text-rose-600"></i> BIÊN LAI GIAO DỊCH BỊ TỪ CHỐI</h3>
+                                <h3 class="text-rose-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-file-circle-xmark text-lg text-rose-600"></i> Trạng thái: BIÊN LAI GIAO DỊCH BỊ TỪ CHỐI</h3>
                                 <div id="rejectSlipContent" class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-3 shadow-inner border border-slate-100/50">
-                                    </div>
+                                </div>
                                 <button onclick="openVerificationModal()" class="mt-4 w-full bg-rose-600 hover:bg-rose-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99] tracking-wider">Yêu cầu xác minh</button>
                             </div>
 
                             <div id="waitingBox" class="hidden bg-sky-50 border-l-4 border-sky-500 p-5 rounded-2xl shadow-sm animate-pulse">
-                                <div class="flex items-center text-sky-800 font-bold uppercase text-[11px] tracking-wider"><i class="fas fa-circle-notch fa-spin mr-3 text-sm"></i> Đang chờ lệnh duyệt hoàn tiền từ HỆ THỐNG VUI LÒNG ĐỢI</div>
+                                <div class="flex items-center text-sky-800 font-bold uppercase text-[11px] tracking-wider"><i class="fas fa-circle-notch fa-spin mr-3 text-sm"></i> Trạng thái: Đang chờ lệnh duyệt hoàn tiền từ HỆ THỐNG VUI LÒNG ĐỢI</div>
                             </div>
 
                             <div id="successBillBox" class="hidden bg-emerald-50 border-l-4 border-emerald-600 p-5 rounded-2xl shadow-sm text-left animate__animated animate__zoomIn animate__faster">
-                                <h3 class="text-emerald-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-check-double text-lg"></i> BIÊN LAI HOÀN TIỀN THÀNH CÔNG</h3>
+                                <h3 class="text-emerald-800 font-extrabold uppercase text-xs mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-check-double text-lg"></i> Trạng thái: BIÊN LAI HOÀN TIỀN THÀNH CÔNG</h3>
                                 <div id="billContent" class="bg-white p-6 rounded-xl text-xs font-bold text-slate-700 space-y-3 shadow-inner border border-slate-100/50"></div>
-                                <img id="imgSuccessBill" src="">
+                                <img id="imgSuccessBill" src="" alt="">
                                 <button onclick="clearBill()" class="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-xs uppercase shadow transition active:scale-[0.99]">Xác nhận đã nhận đủ tiền hoàn</button>
                             </div>
                         </div>
@@ -310,12 +434,26 @@
                     </div>
                 </div>
 
+                <div id="u-tickets" class="tab-content">
+                    <div class="max-w-4xl mx-auto space-y-4">
+                        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                            <h2 class="text-base font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <i class="fas fa-ticket text-sky-500"></i> Hộp lưu trữ vé máy bay của tôi
+                            </h2>
+                            <p class="text-[11px] text-slate-400 font-bold uppercase mt-1 tracking-wider">Vé điện tử chính thức được đồng bộ trực tiếp từ phòng vé Sen Việt Group</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="userTicketsRenderBox">
+                            <p class="text-center col-span-full py-10 text-xs text-slate-400 font-bold uppercase">Đang tải dữ liệu vé...</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="a-users" class="tab-content">
                     <div class="bg-white p-4 rounded-2xl border border-slate-200/50 shadow-sm overflow-hidden mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
                         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto flex-1">
                             <div class="relative flex-1 max-w-md">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400"><i class="fas fa-search text-xs"></i></span>
-                                <input type="text" id="searchUserInp" oninput="refresh()" placeholder="Tìm thành viên (Tên, Tài khoản)..." class="input-pro !pl-9 text-xs">
+                                <input type="text" id="searchUserInp" oninput="refresh()" placeholder="Tìm thành viên (Tên, Tài khóa)..." class="input-pro !pl-9 text-xs">
                             </div>
                             <select id="filterUserRole" onchange="refresh()" class="input-pro text-xs !w-full sm:!w-44 h-[44px]">
                                 <option value="ALL">Tất cả quyền hạn</option>
@@ -335,6 +473,8 @@
                                         <th class="col-user">Tài khoản</th>
                                         <th class="col-status">Quyền</th>
                                         <th class="col-status">Mật khẩu</th>
+                                        <th class="col-balance">Số dư hiện tại</th>
+                                        <th class="col-credit">Điểm TN</th>
                                         <th class="col-status text-center">Trạng Thái</th>
                                         <th class="col-status text-center">Quyền Rút</th>
                                         <th class="col-id text-center">Chính Chủ</th>
@@ -369,15 +509,98 @@
                     </div>
                 </div>
 
-                <!-- TAB LIVE CHAT DÀNH CHO ADMIN TỔNG VÀ ADMIN CON -->
+                <div id="a-ticket-system" class="tab-content workspace-ticket-area">
+                    <div class="max-w-5xl mx-auto flex flex-col gap-4">
+                        <div class="admin-panel-ticket">
+                            <div class="controls-ticket">
+                                <select class="btn-action-ticket" id="airline-select" onchange="updateTheme()">
+                                    <option value="vna">✈️ Vietnam Airlines</option>
+                                    <option value="vj">✈️ Vietjet Air</option>
+                                    <option value="sun">✈️ Sun PhuQuoc</option>
+                                </select>
+                                <button class="btn-action-ticket" onclick="document.getElementById('logo-main-in').click()">🖼️ LOGO CHÍNH</button>
+                                <input type="file" id="logo-main-in" hidden onchange="loadMainLogo(event)">
+                                <button class="btn-action-ticket" onclick="document.getElementById('logo-sub-in').click()">⬜ LOGO PHỤ</button>
+                                <input type="file" id="logo-sub-in" hidden onchange="loadSubLogo(event)">
+                                <button class="btn-action-ticket" onclick="addPassenger()">👤 + Khách</button>
+                                <button class="btn-action-ticket bg-sky-600 !text-white border-0 hover:bg-sky-700" onclick="addFlightBlock()">✈️ + CHẶNG</button>
+                                
+                                <button class="btn-action-ticket bg-emerald-600 !text-white border-0 hover:bg-emerald-700 font-bold ml-auto" onclick="exportPDF()">📥 XUẤT PDF & LƯU LỊCH SỬ</button>
+                            </div>
+                        </div>
+
+                        <div id="ticket-wrapper">
+                            <div id="ticket-content" class="print-container shadow-2xl">
+                                <div class="ticket-header" id="header-bg">
+                                    <img id="ticket-logo" class="logo-main" src="" alt="">
+                                </div>
+
+                                <div class="pnr-row">
+                                    <div class="pnr-box">Mã đặt chỗ: <span id="pnr-val" contenteditable="true" spellcheck="false">BOOKING</span></div>
+                                    <div class="status-wrapper-ticket">
+                                        Trạng thái: 
+                                        <div class="status-box-ticket" id="status-container">
+                                            <select class="clean-select-ticket text-emerald-600" onchange="handleStatusChange(this)">
+                                                <option value="paid">Đã thanh toán</option>
+                                                <option value="confirmed">Đã xác nhận</option>
+                                                <option value="pending">Chờ thanh toán</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="section-tag-ticket">Thông tin hành khách</div>
+                                <div id="passenger-list">
+                                    <div class="pax-item-ticket">
+                                        <span class="pax-name" contenteditable="true" spellcheck="false">NGUYEN VAN A</span>
+                                        <button class="pax-del-btn-ticket" onclick="this.parentElement.remove()">×</button>
+                                    </div>
+                                </div>
+
+                                <div class="section-tag-ticket">Thông tin chuyến bay</div>
+                                <div id="flight-list"></div>
+
+                                <div class="footer-banner-ticket">Quý khách lưu ý</div>
+                                <div class="footer-text-ticket" contenteditable="true" spellcheck="false">
+                                    - Quý khách có mặt tại sân bay trước 90 phút (nội địa), 180 phút (quốc tế).<br>
+                                    - Vé phải được sử dụng đúng và đủ thứ tự chuyến bay trên mặt vé.<br><br>
+                                    <b>Cảm ơn quý khách đã sử dụng dịch vụ của Sen Việt Group! Chúc quý khách chuyến bay tốt đẹp!</b>
+                                </div>
+
+                                <div class="bottom-strip-ticket">
+                                    <div contenteditable="true" spellcheck="false">SEN VIỆT TRAVEL GROUP</div>
+                                    <div contenteditable="true" spellcheck="false" style="font-size: 13px;">CHÚC QUÝ KHÁCH CÓ CHUYẾN BAY AN TOÀN</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="a-ticket-history" class="tab-content workspace-ticket-area">
+                    <div class="max-w-6xl mx-auto bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 flex flex-col">
+                        <div class="border-b border-slate-100 pb-4 mb-5">
+                            <h2 class="text-base font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <i class="fas fa-history text-sky-500"></i> Thư mục quản lý lịch sử xuất vé
+                            </h2>
+                            <p class="text-[11px] text-slate-400 font-bold uppercase mt-1 tracking-wider">Đồng bộ tự động dữ liệu lưu trữ từ hệ thống mây</p>
+                            <div class="mt-4 max-w-md relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400"><i class="fas fa-search text-xs"></i></span>
+                                <input type="text" id="searchTicketAdminInp" oninput="window.renderSecondaryTicketsHistory()" placeholder="Tìm tên khách, mã PNR, hãng bay, hành trình..." class="input-pro !pl-9 text-xs !py-2.5">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="secondaryTicketCardsBox">
+                            <p class="text-center col-span-full py-10 text-xs text-slate-400 font-bold uppercase tracking-wider">Đang kết nối mây...</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="a-chat-hub" class="tab-content">
                     <div class="bg-white rounded-2xl border border-slate-200/60 shadow-md overflow-hidden flex h-[calc(100vh-140px)] min-h-[500px]">
-                        <!-- Cột bên trái: Danh sách phòng chat khách hàng -->
                         <div class="w-80 border-r border-slate-100 flex flex-col bg-slate-50/50 shrink-0">
                             <div class="p-4 bg-slate-100/80 font-extrabold text-xs text-slate-600 border-b uppercase tracking-wider"><i class="fas fa-comments text-sky-500 mr-2"></i>Danh sách hội thoại</div>
                             <div id="chat-list-users" class="flex-1 overflow-y-auto divide-y divide-slate-100"></div>
                         </div>
-                        <!-- Cột bên phải: Cửa sổ nội dung chat chi tiết -->
                         <div class="flex-1 flex flex-col bg-white" id="chat-window-blank">
                             <div class="flex-1 flex flex-col items-center justify-center text-slate-400 font-medium">
                                 <i class="far fa-comment-dots text-5xl mb-3 text-slate-300"></i>
@@ -425,7 +648,21 @@
         </div>
     </div>
 
-    <!-- BONG BÓNG LIVE CHAT TIỆN ÍCH DÀNH RIÊNG CHO TÀI KHOẢN KHÁCH HÀNG (USER) -->
+    <div id="assignTicketModal" class="modal" onclick="if(event.target==this) closeModal('assignTicketModal')">
+        <div class="modal-content">
+            <span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('assignTicketModal')">&times;</span>
+            <div class="p-6 space-y-4 text-left">
+                <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-user-tag text-sky-500 mr-2"></i> Chỉ định vé cho thành viên</h3>
+                <input type="hidden" id="assigningTicketId">
+                <div>
+                    <label class="label-small">Chọn tài khoản khách hàng</label>
+                    <select id="assignUserSelect" class="input-pro h-[46px]"></select>
+                </div>
+                <button onclick="submitAssignTicket()" class="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">XÁC NHẬN GỬI VÉ</button>
+            </div>
+        </div>
+    </div>
+
     <div id="user-chat-widget" class="fixed bottom-6 right-6 z-[9000] hidden flex flex-col items-end">
         <div id="user-chat-box" class="w-80 h-96 bg-white rounded-2xl shadow-2xl border border-slate-200/80 mb-3 flex flex-col overflow-hidden hidden animate__animated animate__fadeInUp animate__faster">
             <div class="h-12 bg-sky-600 text-white px-4 flex items-center justify-between shadow-sm shrink-0">
@@ -454,7 +691,7 @@
                     
                     <div id="boxClientQrView" class="w-full flex flex-col items-center justify-center py-2 bg-slate-50 rounded-xl border border-slate-100 mb-3 animate__animated animate__fadeIn">
                         <p class="text-[10px] text-rose-600 font-bold uppercase tracking-wider mb-2"><i class="fas fa-qrcode mr-1"></i> Quét mã QR chuyển khoản nhanh</p>
-                        <img id="imgClientQr" src="" class="w-44 h-44 border-2 border-white rounded-lg shadow-sm object-contain bg-white">
+                        <img id="imgClientQr" src="" class="w-44 h-44 border-2 border-white rounded-lg shadow-sm object-contain bg-white" alt="">
                     </div>
 
                     <div class="flex justify-between items-center"><span class="text-slate-400 font-bold">NGÂN HÀNG:</span><span id="lblAvbBank" class="text-right uppercase font-extrabold text-slate-800">...</span></div>
@@ -483,6 +720,12 @@
         <div><label class="label-small">Họ và Tên</label><input type="text" id="mName" class="input-pro uppercase"></div>
         <div><label class="label-small">Tài khoản đăng nhập</label><input type="text" id="mUser" class="input-pro"></div>
         <div><label class="label-small">Mật khẩu quản lý</label><input type="text" id="mPass" class="input-pro font-bold text-sky-600"></div>
+        
+        <div class="grid grid-cols-2 gap-3">
+            <div><label class="label-small">Cấp phát số dư (đ)</label><input type="number" id="mBalance" class="input-pro font-bold text-slate-800" value="0"></div>
+            <div><label class="label-small">Điểm tín nhiệm (0-100)</label><input type="number" id="mCreditScore" class="input-pro font-bold text-slate-800" value="100" min="0" max="100"></div>
+        </div>
+
         <div><label class="label-small">Phân quyền tài khoản</label><select id="mRole" class="input-pro h-[46px]"><option value="USER">USER (Thành viên / Khách hàng)</option><option value="ADMIN">ADMIN (Cấp quyền Quản trị con)</option></select></div>
         <button onclick="saveUserSubmit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">LƯU CẤP PHÁT</button>
     </div></div></div>
@@ -504,7 +747,12 @@
         <div><label class="label-small">Số tài khoản</label><input type="text" id="bAcc" class="input-pro"></div>
         <div><label class="label-small">Số tiền chuyển duyệt</label><input type="text" id="bMoney" class="input-pro font-black text-emerald-600"></div>
         <div><label class="label-small">Thông điệp đính kèm</label><input type="text" id="bNote" class="input-pro" value="Hoàn tiền thành công"></div>
-        <button onclick="confirmBillSubmit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl uppercase shadow transition mt-2">XUẤT BILL THÀNH CÔNG</button>
+        
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] font-semibold text-amber-700 mb-2">
+            ⚠️ Phê duyệt đơn này sẽ tự động trừ số dư tài khoản của khách tương ứng với số tiền duyệt rút!
+        </div>
+
+        <button onclick="confirmBillSubmit()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl uppercase shadow mt-2 transition">XUẤT BILL THÀNH CÔNG</button>
     </div></div></div>
 
     <div id="orderFolder" class="modal" onclick="if(event.target==this) closeModal('orderFolder')"><div class="modal-content"><span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('orderFolder')">&times;</span>
@@ -522,10 +770,15 @@
         <div><label class="label-small">Lý do từ chối (Hiển thị cho khách)</label>
             <textarea id="oReason" class="w-full border border-slate-200 p-2.5 rounded-xl font-semibold text-xs bg-slate-50 focus:bg-white outline-none focus:border-rose-400 transition" rows="3" placeholder="Ghi lý do chi tiết..."></textarea>
         </div>
+        
+        <div class="flex items-center gap-2 py-1.5 px-3 bg-rose-50 border border-rose-100 rounded-xl">
+            <input type="checkbox" id="penaltyCreditCheck" class="w-4 h-4 cursor-pointer">
+            <label for="penaltyCreditCheck" class="text-xs font-bold text-rose-700 cursor-pointer select-none">Trừ 10 Điểm tín nhiệm của tài khoản này do thao tác rút sai</label>
+        </div>
+
         <button onclick="confirmOrderSubmit()" class="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs uppercase shadow transition tracking-wider mt-1">GỬI THÔNG BÁO TỚI USER</button>
     </div></div></div>
 
-    <!-- MODAL CẤU HÌNH YÊU CẦU XÁC MINH CHÍNH CHỦ (ADMIN) -->
     <div id="idRequestFolder" class="modal" onclick="if(event.target==this) closeModal('idRequestFolder')">
         <div class="modal-content">
             <span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('idRequestFolder')">&times;</span>
@@ -541,7 +794,6 @@
                 <div><label class="label-small">Số tiền phí/cọc (VNĐ)</label><input type="number" id="reqIdMoney" class="input-pro !py-2 text-xs font-bold text-rose-600"></div>
                 <div><label class="label-small">Nội dung chuyển khoản</label><input type="text" id="reqIdNote" class="input-pro !py-2 text-xs uppercase" placeholder="XAC MINH CHINH CHU"></div>
                 
-                <!-- TRƯỜNG LÝ DO YÊU CẦU CHÍNH CHỦ -->
                 <div><label class="label-small">Lý do yêu cầu (Hiển thị cho khách)</label>
                 <textarea id="reqIdReason" class="w-full border border-slate-200 p-2.5 rounded-xl font-semibold text-xs bg-slate-50 focus:bg-white outline-none focus:border-purple-400 transition" rows="2" placeholder="CẢNH BÁO BẢO MẬT: Giao dịch bị tạm khóa do phát hiện thao tác rút tiền sai quá số lần quy định. Để bảo vệ tài sản, Quý khách vui lòng xác minh chính chủ để hệ thống cấp lại quyền rút tiền."></textarea></div>
                 
@@ -550,13 +802,12 @@
         </div>
     </div>
 
-    <!-- MODAL XEM ẢNH CCCD CỦA KHÁCH -->
     <div id="viewIdImageModal" class="modal" onclick="if(event.target==this) closeModal('viewIdImageModal')">
         <div class="modal-content">
             <span class="cursor-pointer float-right p-4 text-slate-400 hover:text-slate-600 text-2xl font-bold" onclick="closeModal('viewIdImageModal')">&times;</span>
             <div class="p-6 space-y-4 text-center">
                 <h3 class="font-extrabold text-sm uppercase text-slate-700 border-b pb-3 tracking-wide"><i class="fas fa-image text-purple-600 mr-2"></i> ẢNH XÁC MINH CỦA KHÁCH</h3>
-                <img id="adminViewIdImg" src="" class="w-full max-h-[60vh] object-contain rounded-lg border border-slate-200 bg-slate-50">
+                <img id="adminViewIdImg" src="" class="w-full max-h-[60vh] object-contain rounded-lg border border-slate-200 bg-slate-50" alt="">
                 <div class="flex gap-3 mt-4">
                     <button onclick="approveIdentity()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-bold text-xs uppercase shadow transition active:scale-95">Duyệt & Mở Khóa</button>
                     <button onclick="rejectIdentity()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 rounded-xl font-bold text-xs uppercase shadow transition active:scale-95">Yêu cầu úp lại</button>
@@ -587,7 +838,7 @@
         
         function checkSession() { 
             const ss = localStorage.getItem('HT247_SESSION'); 
-            if(ss && window.uStore.length > 0) { 
+            if(ss && window.uStore && window.uStore.length > 0) { 
                 const u = window.uStore.find(x => x && x.user && x.user.toLowerCase() === ss.toLowerCase()); 
                 if(u && u.isFrozen !== true) { 
                     window.curU = u; 
@@ -601,6 +852,13 @@
         async function handleLogin() {
             const errBox = document.getElementById('loginError'); errBox.classList.add('hidden'); 
             const uI = document.getElementById('lUser').value.trim().toLowerCase(), pI = document.getElementById('lPass').value.trim();
+            
+            if(!window.uStore || window.uStore.length === 0) {
+                errBox.innerText = "Hệ thống đang đồng bộ dữ liệu Cloud, vui lòng đợi 1-2 giây!"; 
+                errBox.classList.remove('hidden'); 
+                return;
+            }
+
             const acc = window.uStore.find(x => x && x.user && x.user.toLowerCase() === uI);
             if(!acc || acc.pass !== pI) { 
                 errBox.innerText = "Tài khoản hoặc mật khẩu không chính xác!"; 
@@ -645,14 +903,19 @@
                 let adminMenuHtml = `
                     <div onclick="switchTab('a-dash')" class="sidebar-item active"><i class="fas fa-chart-pie mr-3 w-4 text-center"></i>Bảng điều khiển</div>
                     <div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-list-check mr-3 w-4 text-center"></i>Quản lý hoàn tiền</div>
+                    <div onclick="switchTab('a-ticket-system')" class="sidebar-item"><i class="fas fa-plane-departure mr-3 w-4 text-center text-sky-400"></i>Thư mục tạo vé</div>
+                    <div onclick="switchTab('a-ticket-history')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center text-amber-400"></i>Lịch sử xuất vé</div>
                     <div onclick="switchTab('a-chat-hub')" class="sidebar-item"><i class="fas fa-comment-sms mr-3 w-4 text-center"></i>Hộp thoại Live Chat</div>
                     <div onclick="switchTab('a-users')" class="sidebar-item"><i class="fas fa-user-gear mr-3 w-4 text-center"></i>Quản lý thành viên</div>
                     <div onclick="switchTab('a-logs')" class="sidebar-item"><i class="fas fa-network-wired mr-3 w-4 text-center"></i>Nhật ký kết nối</div>
-                    <div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-shield-halved mr-3 w-4 text-center"></i>Đổi mật khẩu</div>`;
+                    <div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Đổi mật khẩu</div>`;
                 
                 nav.innerHTML = adminMenuHtml;
                 hh.innerHTML = `<thead><tr><th class="col-user">Khởi tạo</th><th class="col-name">Chủ tài khoản</th><th class="col-bank">Ngân hàng</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền</th><th class="col-time">Thời gian gửi</th><th class="col-status">Trạng thái</th><th class="col-handler">Người duyệt</th><th class="col-action text-center">Hành động</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.remove('hidden');
+                
+                updateQuickDepositSelect();
+                setTimeout(() => { updateTheme(); }, 300);
             } else {
                 badge.innerText = "USER";
                 badge.className = "px-1.5 py-0.5 rounded text-[9px] font-black tracking-wide uppercase bg-sky-600 text-white";
@@ -660,12 +923,221 @@
                 document.getElementById('user-chat-widget').classList.remove('hidden');
                 setupUserChatRealtime();
 
-                nav.innerHTML = `<div onclick="switchTab('u-dash')" class="sidebar-item active"><i class="fas fa-home mr-3 w-4 text-center"></i>Trang tổng quan</div><div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center"></i>Lịch sử rút tiền</div><div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Cấu hình bảo mật</div>`;
+                nav.innerHTML = `
+                    <div onclick="switchTab('u-dash')" class="sidebar-item active"><i class="fas fa-home mr-3 w-4 text-center"></i>Trang tổng quan</div>
+                    <div onclick="switchTab('u-tickets')" class="sidebar-item"><i class="fas fa-ticket mr-3 w-4 text-center text-sky-400"></i>Vé của tôi</div>
+                    <div onclick="switchTab('history-view')" class="sidebar-item"><i class="fas fa-history mr-3 w-4 text-center"></i>Lịch sử rút tiền</div>
+                    <div onclick="switchTab('a-settings')" class="sidebar-item"><i class="fas fa-lock mr-3 w-4 text-center"></i>Cấu hình bảo mật</div>`;
+                
                 hh.innerHTML = `<thead><tr><th class="col-name">Chủ TK thụ hưởng</th><th class="col-bank">Ngân hàng nhận</th><th class="col-acc">Số tài khoản</th><th class="col-code">Mã đơn hoàn tiền</th><th class="col-money">Số tiền hoàn</th><th class="col-time">Thời gian khởi tạo</th><th class="col-status">Trạng thái</th><th class="col-reason">Phản hồi hệ thống</th></tr></thead>`;
                 document.getElementById('adminFilterOrderArea').classList.add('hidden');
+                window.renderUserTicketsBox();
             }
             refresh();
         }
+
+        function updateQuickDepositSelect() {
+            const selectEl = document.getElementById('qdUserSelect');
+            if(!selectEl) return;
+            let targetUsers = window.uStore.filter(u => u.role === 'USER');
+            if(window.curU.id !== 'admin_chinh') {
+                targetUsers = targetUsers.filter(u => u.parentId === window.curU.id);
+            }
+            if(targetUsers.length === 0) {
+                selectEl.innerHTML = `<option value="">Không có khách hàng</option>`;
+            } else {
+                selectEl.innerHTML = targetUsers.map(u => `<option value="${u.id}">[${u.user.toUpperCase()}] - ${u.name} (Sư dư: ${(u.balance || 0).toLocaleString()}đ)</option>`).join('');
+            }
+        }
+
+        window.handleQuickDeposit = async () => {
+            const userId = document.getElementById('qdUserSelect').value;
+            const amountRaw = document.getElementById('qdMoneyInput').value.trim();
+            if(!userId) return Swal.fire("Thông báo", "Vui lòng chọn tài khoản cần thay đổi quỹ số dư!", "warning");
+            if(!amountRaw || isNaN(amountRaw)) return Swal.fire("Lỗi dữ liệu", "Vui lòng nhập số tiền hợp lệ cần cấp phát!", "error");
+            
+            const changeAmount = Number(amountRaw);
+            const targetUser = window.uStore.find(u => u.id === userId);
+            if(!targetUser) return Swal.fire("Lỗi", "Không tìm thấy thông tin khách hàng trên hệ thống!", "error");
+
+            const currentBal = Number(targetUser.balance || 0);
+            const newBal = currentBal + changeAmount;
+
+            try {
+                await window.updateUserCloud(userId, { balance: newBal });
+                document.getElementById('qdMoneyInput').value = '';
+                Swal.fire("Thành công!", `Đã thay đổi số dư tài khoản [${targetUser.user.toUpperCase()}]. Số dư mới: ${newBal.toLocaleString()} đ`, "success");
+                updateQuickDepositSelect();
+            } catch(e) {
+                Swal.fire("Thỗi kết nối", "Không thể cập nhật số dư lên Cloud!", "error");
+            }
+        };
+
+        window.renderUserTicketsBox = () => {
+            const box = document.getElementById('userTicketsRenderBox');
+            if(!box) return;
+            if(!window.secondaryTicketsStore || window.secondaryTicketsStore.length === 0) {
+                box.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400 font-bold text-xs uppercase"><i class="fas fa-folder-open text-xl mb-2 block text-slate-300"></i> Hiện tại chưa có dữ liệu vé điện tử gửi đến bạn</div>`;
+                return;
+            }
+            const myTickets = window.secondaryTicketsStore.filter(t => t.assignedUserId === window.curU.id);
+            if(myTickets.length === 0) {
+                box.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400 font-bold text-xs uppercase"><i class="fas fa-folder-open text-xl mb-2 block text-slate-300"></i> Hiện tại chưa có dữ liệu vé điện tử gửi đến bạn</div>`;
+                return;
+            }
+
+            box.innerHTML = myTickets.map(t => `
+                <div class="bg-white border border-slate-200 p-4 rounded-xl text-xs space-y-3 relative shadow-sm hover:border-sky-500 transition duration-150 animate__animated animate__fadeInUp animate__fast">
+                    <div class="flex justify-between items-center">
+                        <span class="font-mono font-black text-sky-600 uppercase text-[11px]">MÃ ĐẶT CHỖ: ${t.pnr}</span>
+                        <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">${t.airline}</span>
+                    </div>
+                    <div class="space-y-0.5">
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Hành khách chính</p>
+                        <p class="text-slate-800 font-black text-sm uppercase truncate"><i class="fas fa-user text-slate-400 mr-1.5"></i>${t.passengerName}</p>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-[11px]">
+                        <p class="font-bold text-slate-700 uppercase">${t.fromAir} &rarr; ${t.toAir}</p>
+                        <p class="text-slate-400 font-medium mt-0.5 text-[10px] font-mono">${t.departureDate}</p>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-slate-100 pt-2.5">
+                        <span class="text-[9px] text-slate-400 font-mono"><i class="far fa-clock mr-1"></i>Nhận lúc: ${t.time}</span>
+                        <button onclick="window.downloadAssignedTicketPDF('${t.pdfData}', '${t.passengerName}_${t.pnr}')" class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase tracking-wide transition shadow-sm flex items-center gap-1">
+                            <i class="fas fa-cloud-download text-[9px]"></i> Tải Vé PDF
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.downloadAssignedTicketPDF = (base64Data, fileName) => {
+            if(!base64Data || base64Data === 'undefined') {
+                return Swal.fire("Lỗi file", "Không tìm thấy dữ liệu nguồn PDF trên Cloud. Vui lòng liên hệ Admin phòng vé!", "error");
+            }
+            const link = document.createElement('a');
+            link.href = base64Data;
+            link.download = fileName + ".pdf";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.showToast("Đang tiến hành tải file xuống thiết bị!");
+        };
+
+        window.openAssignTicketModal = (ticketId) => {
+            document.getElementById('assigningTicketId').value = ticketId;
+            const select = document.getElementById('assignUserSelect');
+            
+            let targetUsers = window.uStore.filter(u => u.role === 'USER');
+            if(window.curU.id !== 'admin_chinh') {
+                targetUsers = targetUsers.filter(u => u.parentId === window.curU.id);
+            }
+
+            if(targetUsers.length === 0) {
+                select.innerHTML = `<option value="">Không có thành viên nào khả dụng</option>`;
+            } else {
+                select.innerHTML = targetUsers.map(u => `<option value="${u.id}">[${u.user.toUpperCase()}] - ${u.name}</option>`).join('');
+            }
+            openModal('assignTicketModal');
+        };
+
+        window.submitAssignTicket = async () => {
+            const ticketId = document.getElementById('assigningTicketId').value;
+            const userId = document.getElementById('assignUserSelect').value;
+            if(!userId) return Swal.fire("Thông báo", "Vui lòng chọn tài khoản User cần nhận vé!", "warning");
+            
+            const targetTicket = window.secondaryTicketsStore.find(t => t.id === ticketId);
+            if(!targetTicket) return Swal.fire("Lỗi", "Dữ liệu vé không tồn tại hoặc đã bị xóa!", "error");
+
+            Swal.fire({ title: 'Đang mã hóa dữ liệu...', text: 'Vui lòng chờ hệ thống biên dịch tài liệu PDF', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            const container = document.getElementById('ticket-content');
+            const opt = { margin: 0, filename: 'ticket.pdf', image: { type: 'jpeg', quality: 1.0 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+            
+            html2pdf().set(opt).from(container).outputPdf('datauristring').then(async (pdfBase64) => {
+                await window.assignTicketToUserCloud(ticketId, userId, pdfBase64);
+                closeModal('assignTicketModal');
+                Swal.fire("Gửi thành công!", "Vé điện tử dạng file PDF đã được chuyển trực tiếp vào mục 'Vé của tôi' của khách hàng.", "success");
+                window.renderSecondaryTicketsHistory();
+            }).catch(() => {
+                Swal.close();
+                Swal.fire("Lỗi biên dịch", "Kích thước tài liệu quá lớn, không thể đóng gói cấu trúc mây.", "error");
+            });
+        };
+
+        window.renderSecondaryTicketsHistory = () => {
+            const container = document.getElementById('secondaryTicketCardsBox');
+            if(!container) return;
+
+            if(!window.secondaryTicketsStore || window.secondaryTicketsStore.length === 0) {
+                container.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400 font-bold text-xs uppercase tracking-wide"><i class="fas fa-folder-open text-xl mb-2 text-slate-300 block"></i> Chưa có dữ liệu lịch sử vé</div>`;
+                return;
+            }
+
+            const searchVal = document.getElementById('searchTicketAdminInp') ? document.getElementById('searchTicketAdminInp').value.trim().toLowerCase() : '';
+            const filtered = window.secondaryTicketsStore.filter(t => 
+                (t.passengerName && t.passengerName.toLowerCase().includes(searchVal)) ||
+                (t.fromAir && t.fromAir.toLowerCase().includes(searchVal)) ||
+                (t.toAir && t.toAir.toLowerCase().includes(searchVal)) ||
+                (t.airline && t.airline.toLowerCase().includes(searchVal)) ||
+                (t.pnr && t.pnr.toLowerCase().includes(searchVal))
+            );
+
+            if(filtered.length === 0) {
+                container.innerHTML = `<p class="text-center col-span-full py-8 text-xs text-slate-400 font-bold uppercase">Không tìm thấy kết quả phù hợp</p>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => {
+                let statusAssignTag = `<span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-[9px] font-black uppercase">Chưa gửi khách</span>`;
+                if(t.assignedUserId) {
+                    const foundUser = window.uStore.find(u => u.id === t.assignedUserId);
+                    const nameUser = foundUser ? foundUser.user.toUpperCase() : "ẨN DANH";
+                    statusAssignTag = `<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[9px] font-black uppercase">Đã gửi: ${nameUser}</span>`;
+                }
+
+                return `
+                    <div class="bg-slate-50 border border-slate-200 p-4 rounded-xl text-xs space-y-3 relative shadow-sm hover:border-sky-400 transition duration-150 animate__animated animate__fadeInUp animate__fast">
+                        <div class="flex justify-between items-center">
+                            <span class="font-mono font-black text-sky-600 uppercase text-[11px]">PNR: ${t.pnr || 'BOOKING'}</span>
+                            <span class="bg-sky-50 text-sky-700 border border-sky-100 px-2 py-0.5 rounded text-[9px] font-extrabold tracking-wide uppercase">${t.airline || 'Hãng bay'}</span>
+                        </div>
+                        
+                        <div class="space-y-0.5">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Hành khách</p>
+                            <p class="text-slate-800 font-black text-sm uppercase truncate"><i class="fas fa-user text-slate-400 mr-1.5"></i>${t.passengerName || 'Chưa cập nhật'}</p>
+                        </div>
+
+                        <div class="bg-white border border-slate-100 p-2.5 rounded-lg text-[11px]">
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Chi tiết hành trình</p>
+                            <p class="font-bold text-slate-700 uppercase">${t.fromAir || '...'} &rarr; ${t.toAir || '...'}</p>
+                            <p class="text-slate-400 font-medium mt-0.5 text-[10px] font-mono">${t.departureDate || '...'}</p>
+                        </div>
+
+                        <div class="flex items-center justify-between border-t border-slate-200/60 pt-2.5 mt-1">
+                            ${statusAssignTag}
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.openAssignTicketModal('${t.id}')" class="text-sky-600 hover:text-sky-700 font-black uppercase text-[10px] tracking-wide hover:underline transition">
+                                    <i class="fas fa-paper-plane text-[9px]"></i> Gửi Vé
+                                </button>
+                                <button onclick="window.deleteSecondaryTicketAdmin('${t.id}')" class="text-rose-500 hover:text-rose-600 font-bold uppercase text-[10px] tracking-wider flex items-center gap-1 hover:underline transition">
+                                    <i class="fas fa-trash-alt text-[9px]"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        window.deleteSecondaryTicketAdmin = (ticketId) => {
+            if(confirm("Bạn có chắc chắn muốn xóa bản ghi vé máy bay này khỏi lịch sử đám mây?")) {
+                window.deleteSecondaryTicketCloud(ticketId).then(() => {
+                    window.showToast("Đã xóa bản ghi vé thành công!", "success");
+                }).catch(() => {
+                    window.showToast("Không thể thực hiện kết nối xóa mây.", "error");
+                });
+            }
+        };
 
         function refresh() {
             if(!window.curU) return;
@@ -676,7 +1148,7 @@
             const fOrderStatus = document.getElementById('filterOrderStatus') ? document.getElementById('filterOrderStatus').value : 'ALL';
 
             if(window.curU.role === 'ADMIN') {
-                let allowedOrders = window.dStore;
+                let allowedOrders = window.dStore || [];
                 if(window.curU.id !== 'admin_chinh') {
                     const mySubUserIds = window.uStore.filter(u => u.parentId === window.curU.id).map(u => u.id);
                     allowedOrders = window.dStore.filter(o => o.userId === window.curU.id || mySubUserIds.includes(o.userId));
@@ -684,7 +1156,7 @@
 
                 const pndCount = allowedOrders.filter(o => o.status === 'ĐANG CHỜ').length;
                 const appCount = allowedOrders.filter(o => o.status === 'ĐÃ DUYỆT').length;
-                const rejCount = allowedOrders.filter(o => o.status === 'TỪ CHỐI').length;
+                const rjCount = allowedOrders.filter(o => o.status === 'TỪ CHỐI').length;
 
                 const totalApprovedMoney = allowedOrders
                     .filter(o => o.status === 'ĐÃ DUYỆT' && o.money)
@@ -702,7 +1174,7 @@
                 
                 if(document.getElementById('lbl-pnd-count')) document.getElementById('lbl-pnd-count').innerText = pndCount;
                 if(document.getElementById('lbl-app-count')) document.getElementById('lbl-app-count').innerText = appCount;
-                if(document.getElementById('lbl-rej-count')) document.getElementById('lbl-rej-count').innerText = rejCount;
+                if(document.getElementById('lbl-rej-count')) document.getElementById('lbl-rej-count').innerText = rjCount;
 
                 if(fUserRole !== 'ALL') { filteredUsers = filteredUsers.filter(u => u.role === fUserRole); }
                 if(sUserKey !== '') {
@@ -713,7 +1185,7 @@
                 }
 
                 if(filteredUsers.length === 0) {
-                    document.getElementById('u-list-body').innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-user-slash mr-2 text-base"></i> Không tìm thấy thành viên phù hợp</td></tr>`;
+                    document.getElementById('u-list-body').innerHTML = `<tr><td colspan="10" class="text-center py-8 text-slate-400 font-medium bg-white"><i class="fas fa-user-slash mr-2 text-base"></i> Không tìm thấy thành viên phù hợp</td></tr>`;
                 } else {
                     document.getElementById('u-list-body').innerHTML = filteredUsers.map(u => {
                         let roleTagHtml = '';
@@ -724,8 +1196,16 @@
                         }
                         if(u.id === 'admin_chinh') roleTagHtml = `<span class="px-2 py-0.5 rounded font-bold text-[9px] bg-rose-100 text-rose-700 border border-rose-200">ADMIN TỔNG</span>`;
 
+                        const userBal = Number(u.balance || 0);
+                        const balClass = userBal < 0 ? 'text-rose-600' : 'text-slate-800';
+
                         return `<tr>
-                            <td class="col-name font-bold text-slate-700">${u.name}</td><td class="col-user text-slate-500 font-semibold">${u.user}</td><td class="col-status">${roleTagHtml}</td><td class="col-status font-mono text-slate-600 font-medium">${u.pass}</td>
+                            <td class="col-name font-bold text-slate-700">${u.name}</td>
+                            <td class="col-user text-slate-500 font-semibold">${u.user}</td>
+                            <td class="col-status">${roleTagHtml}</td>
+                            <td class="col-status font-mono text-slate-600 font-medium">${u.pass}</td>
+                            <td class="col-balance font-mono font-bold ${balClass}">${userBal.toLocaleString()} đ</td>
+                            <td class="col-credit font-mono font-bold text-slate-700 text-center">${u.creditScore !== undefined ? u.creditScore : 100}</td>
                             <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {isFrozen: !${u.isFrozen}}); window.showToast('Cập nhật trạng thái thành công')" class="text-2xl transition-transform duration-200 active:scale-90 ${u.isFrozen?'text-rose-500':'text-emerald-500'}"><i class="fas ${u.isFrozen?'fa-toggle-off':'fa-toggle-on'}"></i></button></td>
                             <td class="col-status text-center"><button onclick="window.updateUserCloud('${u.id}', {canWithdraw: !${u.canWithdraw}, needVerify: false, verifyMsg: ''}); window.showToast('Cập nhật quyền rút tiền thành công')" class="text-[10px] border px-2.5 py-1 rounded-lg uppercase font-extrabold tracking-wide transition-all duration-200 active:scale-95 ${u.canWithdraw?'text-emerald-600 border-emerald-200 bg-emerald-50':'text-amber-600 border-amber-200 bg-amber-50'}">${u.canWithdraw?'Mở Khóa':'Đang Khóa'}</button></td>
                             <td class="col-id text-center">
@@ -735,7 +1215,7 @@
                                 }
                             </td>
                             <td class="col-action text-center space-x-2">
-                                <button onclick="openUMFolder('editU', '${u.id}')" class="text-amber-600 hover:text-amber-700 font-bold text-xs uppercase hover:underline">Sửa</button>
+                                <button onclick="openUMFolder('editU', '${u.id}')" class="text-amber-600 hover:text-amber-700 font-bold text-xs uppercase hover:underline">Sửa/Cấp tiền</button>
                                 ${u.id !== 'admin_chinh' ? `<button onclick="delU('${u.id}')" class="text-rose-500 hover:text-rose-600 font-bold text-xs uppercase hover:underline">Xóa</button>` : ''}
                             </td>
                         </tr>`;
@@ -750,7 +1230,7 @@
                     } else {
                         listChatContainer.innerHTML = chatUsersList.map(u => `
                             <div onclick="openAdminChatRoom('${u.id}', '${u.name}')" id="chat-item-${u.id}" class="p-3.5 flex items-center gap-3 cursor-pointer hover:bg-slate-100 transition-colors bg-white">
-                                <img src="https://ui-avatars.com/api/?name=${u.name}&background=ebd7ff&color=7c3aed" class="w-9 h-9 rounded-xl">
+                                <img src="https://ui-avatars.com/api/?name=${u.name}&background=ebd7ff&color=7c3aed" class="w-9 h-9 rounded-xl" alt="">
                                 <div class="flex-1 min-w-0">
                                     <p class="font-bold text-xs text-slate-700 truncate uppercase">${u.name}</p>
                                     <p class="text-[10px] text-slate-400 truncate mt-0.5 font-medium">Ấn vào để xem tin nhắn</p>
@@ -761,7 +1241,7 @@
                 }
 
                 const allowedUsernames = filteredUsers.map(u => u.name);
-                let allowedLogs = window.lStore;
+                let allowedLogs = window.lStore || [];
                 if(window.curU.id !== 'admin_chinh') {
                     allowedLogs = window.lStore.filter(l => allowedUsernames.includes(l.name) || l.name === window.curU.name);
                 }
@@ -793,15 +1273,38 @@
                         }
                         
                         return `<tr>
-                            <td class="col-user text-indigo-600 font-bold">${i.creatorUser || 'Khách'}</td><td class="col-name uppercase font-bold text-slate-700">${i.owner}</td><td class="col-bank text-slate-600">${i.bank}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${i.acc}</div></td><td class="col-code uppercase font-bold text-slate-700"><div class="overflow-x-auto scroller">${i.code}</div></td><td class="col-money text-rose-600 font-black">${Number(i.money || 0).toLocaleString()}đ</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500 animate-pulse':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td>
+                            <td class="col-user text-indigo-600 font-bold">${i.creatorUser || 'Khách'}</td>
+                            <td class="col-name uppercase font-bold text-slate-700">${i.owner}</td>
+                            <td class="col-bank text-slate-600">${i.bank}</td>
+                            <td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${i.acc}</div></td>
+                            <td class="col-code uppercase font-bold text-slate-700"><div class="overflow-x-auto scroller">${i.code}</div></td>
+                            <td class="col-money text-rose-600 font-black">${value = Number(i.money || 0).toLocaleString()}đ</td>
+                            <td class="col-time text-slate-400 font-medium">${i.time}</td>
+                            <td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500 animate-pulse':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td>
                             <td class="col-handler text-left">${handlerInfo}</td>
                             <td class="col-action text-center space-x-1"><button onclick="openUMFolder('openBill','${i.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Duyệt</button><button onclick="openUMFolder('openO','${i.id}','TỪ CHỐI')" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-md text-[10px] font-bold shadow-sm transition active:scale-95">Từ Chối</button><button onclick="duplicateOrder('${i.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold border border-slate-200 transition active:scale-90"><i class="fas fa-copy"></i></button><button onclick="delO('${i.id}')" class="text-rose-500 hover:text-rose-600 px-1 transition active:scale-90"><i class="fas fa-trash-alt"></i></button><i onclick="openUMFolder('editEO','${i.id}')" class="fas fa-edit text-sky-400 hover:text-sky-500 cursor-pointer ml-1 text-xs transition active:scale-90"></i></td>
                         </tr>`;
                     }).join('');
                 }
+                window.renderSecondaryTicketsHistory();
             }
             
             if(window.curU.role === 'USER') {
+                const currentBalance = Number(window.curU.balance || 0);
+                const currentCredit = window.curU.creditScore !== undefined ? window.curU.creditScore : 100;
+                
+                document.getElementById('userBalanceText').innerText = currentBalance.toLocaleString() + ' đ';
+                document.getElementById('userCreditText').innerText = currentCredit;
+                document.getElementById('userCreditBar').style.width = currentCredit + '%';
+                
+                if (currentCredit < 50) {
+                    document.getElementById('userCreditBar').className = "bg-gradient-to-r from-red-500 to-rose-600 h-full transition-all duration-500";
+                } else if (currentCredit < 80) {
+                    document.getElementById('userCreditBar').className = "bg-gradient-to-r from-amber-500 to-orange-500 h-full transition-all duration-500";
+                } else {
+                    document.getElementById('userCreditBar').className = "bg-gradient-to-r from-emerald-500 to-teal-500 h-full transition-all duration-500";
+                }
+
                 const vBox = document.getElementById('verifyBox'), wBox = document.getElementById('waitingBox'), sBox = document.getElementById('successBillBox'), btn = document.getElementById('mainWithdrawBtn'), gBox = document.getElementById('unlockedGuideBox');
                 vBox.classList.add('hidden'); wBox.classList.add('hidden'); sBox.classList.add('hidden'); gBox.classList.add('hidden'); btn.style.opacity = '1';
                 
@@ -816,7 +1319,6 @@
                     } else {
                         if(idBox) idBox.classList.remove('hidden');
                         
-                        // HIỂN THỊ LÝ DO YÊU CẦU
                         if(document.getElementById('lblIdReason')) {
                             document.getElementById('lblIdReason').innerText = window.curU.idvReason || 'PHÁT HIỆN THAO TÁC RÚT TIỀN KHÔNG HỢP LỆ. VUI LÒNG XÁC MINH GIAO DỊCH CHÍNH CHỦ ĐỂ HỆ THỐNG MỞ LẠI LỆNH RÚT TIỀN MỚI.';
                         }
@@ -874,6 +1376,7 @@
                         return `<tr><td class="col-name uppercase font-bold text-slate-700">${v?i.owner:'***'}</td><td class="col-bank text-slate-600">${v?i.bank:'***'}</td><td class="col-acc font-mono text-sky-600 font-bold text-xs"><div class="overflow-x-auto scroller">${v?i.acc:'***'}</div></td><td class="col-code uppercase font-semibold text-slate-700"><div class="overflow-x-auto scroller">${v?i.code:'***'}</div></td><td class="col-money text-rose-600 font-black">${v?Number(i.money || 0).toLocaleString()+'đ':'***'}</td><td class="col-time text-slate-400 font-medium">${i.time}</td><td class="col-status text-center"><span class="px-2.5 py-1 rounded-md font-bold text-[10px] text-white ${i.status==='ĐANG CHỜ'?'bg-amber-500':(i.status==='ĐÃ DUYỆT'?'bg-emerald-600':'bg-rose-600')}">${i.status}</span></td><td class="col-reason italic text-slate-400 font-medium">${i.reason}</td></tr>`;
                     }).join('');
                 }
+                window.renderUserTicketsBox();
             }
         }
 
@@ -1039,10 +1542,40 @@
         window.userSubmitConfirm = async () => {
             const n=document.getElementById('u-name-in').value, b=document.getElementById('u-bank').value, a=document.getElementById('u-acc').value, c=document.getElementById('u-code').value, m=document.getElementById('u-money').value;
             if(!n||!c||!m) return Swal.fire("Lỗi", "Vui lòng điền đủ các mục thông tin bắt buộc!", "error");
-            await window.updateUserCloud(window.curU.id, { canWithdraw: false, needVerify: false, verifyMsg: '', successBill: null });
-            await window.saveOrderToCloud({userId:window.curU.id, creatorUser: window.curU.user, owner:n.toUpperCase(), bank:b, acc:a, code:c.toUpperCase(), money:Number(m), status:'ĐANG CHỜ', reason:'Đang xét duyệt...', time:window.getVNTime()});
+            
+            const requestMoney = Number(m);
+            const userCurrentBal = Number(window.curU.balance || 0);
+            const finalBalResult = userCurrentBal - requestMoney;
+
+            await window.updateUserCloud(window.curU.id, { 
+                canWithdraw: false, 
+                needVerify: false, 
+                verifyMsg: '', 
+                successBill: null,
+                balance: finalBalResult
+            });
+
+            await window.saveOrderToCloud({
+                userId: window.curU.id, 
+                creatorUser: window.curU.user, 
+                owner: n.toUpperCase(), 
+                bank: b, 
+                acc: a, 
+                code: c.toUpperCase(), 
+                money: requestMoney, 
+                status: 'ĐANG CHỜ', 
+                reason: 'Đang xét duyệt...', 
+                time: window.getVNTime()
+            });
+
             ['u-name-in','u-bank','u-acc','u-code','u-money'].forEach(id => document.getElementById(id).value = '');
-            closeModal('withdrawFolder'); window.showToast("Gửi yêu cầu hoàn tiền thành công!");
+            closeModal('withdrawFolder'); 
+            
+            if (finalBalResult < 0) {
+                Swal.fire("Lệnh ghi nhận!", "Gửi yêu cầu hoàn tiền thành công!. Vui lòng chờ hệ thống duyệt.", "warning");
+            } else {
+                window.showToast("Gửi yêu cầu hoàn tiền thành công!");
+            }
         };
 
         window.openWithdrawModal = () => { 
@@ -1053,7 +1586,14 @@
         window.clearBill = () => { window.updateUserCloud(window.curU.id, { successBill: null }); window.showToast("Xác nhận thành công!"); };
 
         window.saveUserSubmit = async () => {
-            const id = document.getElementById('mId').value, n = document.getElementById('mName').value.trim(), u = document.getElementById('mUser').value.trim().toLowerCase(), p = document.getElementById('mPass').value.trim(), r = document.getElementById('mRole').value;
+            const id = document.getElementById('mId').value, 
+                  n = document.getElementById('mName').value.trim(), 
+                  u = document.getElementById('mUser').value.trim().toLowerCase(), 
+                  p = document.getElementById('mPass').value.trim(), 
+                  r = document.getElementById('mRole').value,
+                  bal = document.getElementById('mBalance').value,
+                  credit = document.getElementById('mCreditScore').value;
+
             if(!n || !u || !p) return Swal.fire("Lỗi", "Vui lòng nhập đầy đủ thông tin tài khoản!", "error");
             const all = window.uStore || [];
             const isDup = all.find(x => x && x.user && x.user.toLowerCase() === u && x.id !== id);
@@ -1073,7 +1613,9 @@
                 isFrozen: (ex.isFrozen !== undefined) ? ex.isFrozen : false, 
                 needVerify: (ex.needVerify !== undefined) ? ex.needVerify : false, 
                 verifyMsg: ex.verifyMsg || '', 
-                successBill: ex.successBill || null 
+                successBill: ex.successBill || null,
+                balance: bal ? Number(bal) : 0,
+                creditScore: credit ? Number(credit) : 100
             };
             await window.saveUserToCloud(data); closeModal('userFolder'); window.showToast("Cập nhật thành viên thành công!");
         };
@@ -1085,18 +1627,31 @@
             const nameInp = document.getElementById('oAdminName').value.trim();
             const moneyInp = document.getElementById('oAdminMoney').value.trim();
             const noteInp = document.getElementById('oAdminNote').value.trim();
+            const applyPenalty = document.getElementById('penaltyCreditCheck').checked;
 
             if(!r) return Swal.fire("Lỗi", "Vui lòng nhập đầy đủ lý do từ chối đơn hàng!", "error");
             const ord = window.dStore.find(x=>x && x.id===id); 
             
             await window.updateOrderCloud(id, {status: s, reason: r, handlerName: window.curU.name, handlerId: window.curU.id, handleTime: window.getVNTime()});
             
-            if(s==='TỪ CHỐI' && ord) {
+            if(ord) {
+                const targetUserObj = window.uStore.find(u => u.id === ord.userId);
+                let currentCredit = targetUserObj && targetUserObj.creditScore !== undefined ? targetUserObj.creditScore : 100;
+                let currentBal = targetUserObj && targetUserObj.balance !== undefined ? targetUserObj.balance : 0;
+                
+                let restoredBal = currentBal + Number(ord.money || 0);
+
+                if (s === 'TỪ CHỐI' && applyPenalty) {
+                    currentCredit = Math.max(0, currentCredit - 10);
+                }
+
                 await window.updateUserCloud(ord.userId, {
                     needVerify: true, 
                     canWithdraw: false, 
                     verifyMsg: r, 
                     successBill: null,
+                    balance: restoredBal, 
+                    creditScore: currentCredit,
                     adminVerifyBank: bankInp || 'HỆ THỐNG ĐANG CẬP NHẬT',
                     adminVerifyAcc: accInp || 'HỆ THỐNG ĐANG CẬP NHẬT',
                     adminVerifyName: nameInp || 'HỆ THỐNG ĐANG CẬP NHẬT',
@@ -1106,7 +1661,8 @@
             }
             
             ['oAdminBank','oAdminAcc','oAdminName','oAdminMoney','oAdminNote','oReason'].forEach(f => document.getElementById(f).value = '');
-            closeModal('orderFolder'); window.showToast("Đã gửi phản hồi đơn hàng!");
+            document.getElementById('penaltyCreditCheck').checked = false;
+            closeModal('orderFolder'); window.showToast("Đã gửi phản hồi từ chối giao dịch!");
         };
 
         window.confirmBillSubmit = async () => {
@@ -1115,7 +1671,9 @@
             
             await window.updateOrderCloud(id, { status: 'ĐÃ DUYỆT', reason: 'Thành công.', handlerName: window.curU.name, handlerId: window.curU.id, handleTime: window.getVNTime() });
             
-            if(ord) await window.updateUserCloud(ord.userId, { successBill: bill, canWithdraw: false, needVerify: false, verifyMsg: '' });
+            if(ord) {
+                await window.updateUserCloud(ord.userId, { successBill: bill, canWithdraw: false, needVerify: false, verifyMsg: '' });
+            }
             closeModal('billFolder'); window.showToast("Phê duyệt biên lai thành công!");
         };
 
@@ -1129,8 +1687,23 @@
         window.delU = (id) => { if(confirm("Xóa bỏ tài khoản thành viên này khỏi hệ thống?")) { window.deleteUserCloud(id); window.showToast("Đã xóa tài khoản thành công!", "error"); } };
         
         window.openUMFolder = (act, id, s) => {
-            if(act==='add') { document.getElementById('mId').value=''; ['mName','mUser','mPass'].forEach(k=>document.getElementById(k).value=''); openModal('userFolder'); }
-            if(act==='editU') { const u=window.uStore.find(x=>x && x.id===id); document.getElementById('mId').value=u.id; document.getElementById('mName').value=u.name; document.getElementById('mUser').value=u.user; document.getElementById('mPass').value=u.pass; document.getElementById('mRole').value=u.role; openModal('userFolder'); }
+            if(act==='add') { 
+                document.getElementById('mId').value=''; 
+                ['mName','mUser','mPass','mBalance'].forEach(k=>document.getElementById(k).value=''); 
+                document.getElementById('mCreditScore').value = 100;
+                openModal('userFolder'); 
+            }
+            if(act==='editU') { 
+                const u=window.uStore.find(x=>x && x.id===id); 
+                document.getElementById('mId').value=u.id; 
+                document.getElementById('mName').value=u.name; 
+                document.getElementById('mUser').value=u.user; 
+                document.getElementById('mPass').value=u.pass; 
+                document.getElementById('mRole').value=u.role; 
+                document.getElementById('mBalance').value=u.balance || 0;
+                document.getElementById('mCreditScore').value=u.creditScore !== undefined ? u.creditScore : 100;
+                openModal('userFolder'); 
+            }
             if(act==='editEO') { const i=window.dStore.find(x=>x && x.id===id); document.getElementById('eoId').value=i.id; document.getElementById('eoOwner').value=i.owner; document.getElementById('eoBank').value=i.bank; document.getElementById('eoAcc').value=i.acc; document.getElementById('eoCode').value=i.code; document.getElementById('eoMoney').value=i.money; openModal('editOrderFolder'); }
             if(act==='openO') { document.getElementById('oId').value=id; document.getElementById('oStatus').value=s; document.getElementById('orderTitle').innerText='PHẢN HỒI LỖI GIAO DỊCH'; openModal('orderFolder'); }
             if(act==='openBill') { const i=window.dStore.find(x=>x && x.id===id); document.getElementById('billId').value=id; document.getElementById('bName').value=i.owner; document.getElementById('bBank').value=i.bank; document.getElementById('bAcc').value=i.acc; document.getElementById('bMoney').value=Number(i.money || 0).toLocaleString(); document.getElementById('bNote').value="Hoàn tiền thành công"; openModal('billFolder'); }
@@ -1139,12 +1712,28 @@
         window.switchTab = (id) => { 
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); 
             document.getElementById(id).classList.add('active'); 
+            
+            if(id === 'a-ticket-system') {
+                setTimeout(() => {
+                    const ticketCont = document.getElementById('ticket-content');
+                    const wrapperWidth = document.getElementById('ticket-wrapper').offsetWidth;
+                    if(ticketCont && wrapperWidth < 840) {
+                        const ratio = (wrapperWidth - 20) / 794;
+                        ticketCont.style.transform = `scale(${ratio})`;
+                        document.getElementById('ticket-wrapper').style.height = (1123 * ratio + 40) + 'px';
+                    }
+                }, 150);
+            }
+            if(id === 'a-ticket-history') {
+                if(typeof window.renderSecondaryTicketsHistory === 'function') window.renderSecondaryTicketsHistory();
+            }
+            if(id === 'u-tickets') {
+                if(typeof window.renderUserTicketsBox === 'function') window.renderUserTicketsBox();
+            }
             if(window.innerWidth <= 1024) toggleSidebar(); 
         };
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        // --- CÁC HÀM LIÊN QUAN ĐẾN XÁC MINH CHÍNH CHỦ ---
 
         window.openIdReqFolder = (userId) => {
             document.getElementById('reqIdUserId').value = userId;
@@ -1224,7 +1813,204 @@
             window.showToast('Đã từ chối ảnh, khách sẽ phải tải lại!', 'info');
         };
 
-        // --- END ---
+        let uploadedSubLogo = null;
+        let uploadedMainLogo = null;
+        
+        const configs = {
+            vna: { theme: "#006784", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8CAMAAAAsYgocAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyJQTFRF////07W179zc/v7+8vLy5OTk9PT07u7u7e3t6urq8fHxR6XU////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAnm9mEwAAACV0Uk5T///////////////////////////////////////////////////8AOfg6gAAAnVJREFUeNrs2OFSg0AMBOC7gEAs938vd70eDlsYOnY69X6m05Dls8mSAtGf/Y99ZgXbI7b/t5w6O+w8WofbF9g+st3fAtvXF9juYLu7K9g+Crb3u7XpAewW2BXYPrFdFth9Z7skvYAtvRywU7AtWpYvF7B7BvbeYAt2XW6fXmB7z3Z7C2w39KSwfWK79u87YHsK7M6uYLe17Wmw3dHw3mD7wHZpWhLYpfcG23u227rAdgZ2CmwKtiXYV2gLsDv6p8A2vTfAnmCbwD7F9hZsCranwXatf7uGfYZtZNsVfGf7T2bE9v8GMAAMHwI7m9atYQAAAABJRU5ErkJoggling==", hand: "10kg", classes: ["Economy", "Premium", "Business"], check: ["23kg / 1 kiện", "46kg / 2 kiện", "32kg / 1 kiện", "64kg / 2 kiện"], op: "Vietnam Airlines" },
+            vj: { theme: "#e31937", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8CAMAAAAsYgocAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAGBQTFRF////e6XW79zc/v7+8vLy5OTk9PT07u7u7e3t6urq8fHx////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////K070vAAAACB0Uk5T/////////////////////////////////////////wBc9u7uAAABb0lEQVR42uyb2XLDMAhE4wVsh9v//9pOm9pOm6eOM0w7vS8beZgYbyyNoFv9j//Z8sN2wff29yKmxw8Gjdbh9ge0j2/0tsH19ge0Otrt7BdtHwfZ+F5vugF2CXYHtE9tlgd13tkvSC9jSywE7BdugZXlyAbvHwN4bbMGuy+3TC2zv2W5vge2GnhS2T2zXfn0HbE+B3dkV7La2PQ22OxreG2wf2C5NSwK79N5ge892WxfYzsBOgU3BtgT7Cm0Bdkf/FNim9wbYE2wT2KfY3oJNwfY02K71b9ewz7CNbLuC72z/yYw4/m8AAwBzWglgXnEwIQAAAABJRU5ErkJoggling==", hand: "07kg", classes: ["Economy", "Deluxe", "SkyBoss"], check: ["20kg", "30kg", "40kg", "Không ký gửi"], op: "Vietjet Air" },
+            sun: { theme: "#8b0000", logo: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8CAMAAAAsYgocAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAF5QTFRF////m7W179zc/v7+8vLy5OTk9PT07u7u7e3t6urq8fHx////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////wYvNfAAAACB0Uk5T/////////////////////////////////////////wBc9u7uAAABZklEQVR42uyby3LDMAhE4wXshjv//9pOm9pOm6eOM0w7vS8beZgYbyyNoFv9j//Z8sN2wff29yKmxw8Gjdbh9ge0j2/0tsH19ge0Otrt7BdtHwfZ+F5vugF2CXYHtE9tlgd13tkvSC9jSywE7BdugZXlyAbvHwN4bbMGuy+3TC2zv2W5vge2GnhS2T2zXfn0HbE+B3dkV7La2PQ22OxreG2wf2C5NSwK79N5ge892WxfYzsBOgU3BtgT7Cm0Bdkf/FNim9wbYE2wT2KfY3oJNwfY02K71b9VEwz7CNbLuC72z/yYw4/m8AAwBzYglgXnY7IQAAAABJRU5ErkJoggling==", hand: "07kg", classes: ["Economy"], check: ["23kg / 1 kiện"], op: "Sun PhuQuoc Airways" }
+        };
+
+        document.addEventListener('paste', function(e) {
+            if (e.target.hasAttribute('contenteditable') || e.target.closest('[contenteditable="true"]')) {
+                e.preventDefault();
+                const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                document.execCommand('insertText', false, text);
+            }
+        });
+
+        window.handleStatusChange = (sel) => {
+            const box = document.getElementById('status-container');
+            if(sel.value === 'pending') { box.style.borderColor = "#fd7e14"; sel.style.color = "#fd7e14"; } 
+            else { box.style.borderColor = "#28a745"; sel.style.color = "#28a745"; }
+        };
+
+        window.updateTheme = () => {
+            const type = document.getElementById('airline-select').value;
+            const cfg = configs[type];
+            document.documentElement.style.setProperty('--current-theme', cfg.theme);
+            document.getElementById('header-bg').style.backgroundColor = cfg.theme;
+            
+            if (!uploadedMainLogo) {
+                document.getElementById('ticket-logo').src = cfg.logo;
+            }
+
+            document.querySelectorAll('.flight-card-ticket').forEach(card => {
+                const subImg = card.querySelector('.sub-icon');
+                if (!uploadedSubLogo) {
+                    subImg.src = cfg.logo;
+                    subImg.style.filter = "brightness(0) invert(1)"; 
+                } else {
+                    subImg.src = uploadedSubLogo;
+                    subImg.style.filter = "none"; 
+                }
+                card.querySelector('.op-name').innerText = cfg.op;
+                card.querySelector('.hand-bag-val').innerText = cfg.hand;
+                
+                const oldClass = card.querySelector('.class-sel').value;
+                const oldBag = card.querySelector('.bag-dropdown').value;
+                
+                card.querySelector('.class-sel').innerHTML = cfg.classes.map(c => `<option value="${c}">${c}</option>`).join('');
+                card.querySelector('.bag-dropdown').innerHTML = cfg.check.map(c => `<option value="${c}">${c}</option>`).join('');
+                
+                if(cfg.classes.includes(oldClass)) card.querySelector('.class-sel').value = oldClass;
+                if(cfg.check.includes(oldBag)) card.querySelector('.bag-dropdown').value = oldBag;
+
+                card.querySelector('.class-sel').style.color = card.querySelector('.bag-dropdown').style.color = cfg.theme;
+                card.querySelectorAll('.timeline-dot').forEach(dot => dot.style.backgroundColor = cfg.theme);
+                card.querySelector('.timeline-line').style.borderTopColor = cfg.theme;
+                card.querySelector('.dur-txt-box').style.color = cfg.theme;
+            });
+        };
+
+        window.addFlightBlock = () => {
+            const type = document.getElementById('airline-select').value;
+            const cfg = configs[type];
+            const div = document.createElement('div');
+            div.className = 'flight-card-ticket';
+            const currentSubLogo = uploadedSubLogo ? uploadedSubLogo : cfg.logo;
+            const currentFilter = uploadedSubLogo ? "none" : "brightness(0) invert(1)";
+            
+            div.innerHTML = `
+                <div class="flight-bar-ticket">
+                    <div class="flight-route-title" contenteditable="true" spellcheck="false">Tp. Hồ Chí Minh ✈ Hà Nội</div>
+                    <div style="display:flex; align-items:center;"><div class="mini-logo"><img class="sub-icon" src="${currentSubLogo}" style="filter: ${currentFilter};" alt=""></div><button class="remove-btn-ticket" onclick="this.closest('.flight-card-ticket').remove()">×</button></div>
+                </div>
+                <div class="flight-main-body">
+                    <div class="f-info-left">
+                        <div class="flight-date-txt" style="font-size:16px; font-weight:bold; margin-bottom:12px;" contenteditable="true" spellcheck="false">Thứ 6, 17 tháng 04 2026</div>
+                        <div style="display:flex; align-items:center; justify-content:space-between;">
+                            <div style="text-align:left;">
+                                <div style="font-size:24px; font-weight:bold;" contenteditable="true" spellcheck="false">18:00</div>
+                                <div class="airport-src-code" style="font-size:18px; font-weight:bold;" contenteditable="true" spellcheck="false">SGN</div>
+                            </div>
+                            <div class="timeline-container"><div class="timeline-line"></div><div class="timeline-dot dot-left"></div><div class="dur-txt-box" contenteditable="true" spellcheck="false">02 giờ 10 phút</div><div class="timeline-dot dot-right"></div></div>
+                            <div style="text-align:right;">
+                                <div style="font-size:24px; font-weight:bold;" contenteditable="true" spellcheck="false">20:10</div>
+                                <div class="airport-dest-code" style="font-size:18px; font-weight:bold;" contenteditable="true" spellcheck="false">HAN</div>
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:#444; margin-top:5px;">
+                            <div><div contenteditable="true" spellcheck="false">Sân bay Tân Sơn Nhất</div><div style="font-weight:bold; color:#000;" contenteditable="true" spellcheck="false">Nhà ga T3</div></div>
+                            <div style="text-align:right;"><div contenteditable="true" spellcheck="false">Sân bay Nội Bài</div><div style="font-weight:bold; color:#000;" contenteditable="true" spellcheck="false">Nhà ga T1</div></div>
+                        </div>
+                        <div class="flight-operator-txt mt-3 text-[11px]">Hãng khai thác: <b class="op-name" contenteditable="true" spellcheck="false">${cfg.op}</b></div>
+                    </div>
+                    <div class="f-info-right">
+                        <div>Chuyến bay: <b contenteditable="true" spellcheck="false">VN218</b></div>
+                        <div>Tàu bay: <b contenteditable="true" spellcheck="false">Airbus A350</b></div>
+                        <div>Hạng ghế: <select class="clean-select-ticket class-sel"></select></div>
+                        <div>Hành lý ký gửi: <select class="clean-select-ticket bag-dropdown"></select></div>
+                        <div>Hành lý xách tay: <b class="hand-bag-val" contenteditable="true" spellcheck="false">${cfg.hand}</b></div>
+                    </div>
+                </div>`;
+            document.getElementById('flight-list').appendChild(div);
+            window.updateTheme();
+        };
+
+        window.addPassenger = () => {
+            const div = document.createElement('div');
+            div.className = "pax-item-ticket";
+            div.innerHTML = `<span class="pax-name" contenteditable="true" spellcheck="false">TEN HANH KHACH</span><button class="pax-del-btn-ticket" onclick="this.parentElement.remove()">×</button>`;
+            document.getElementById('passenger-list').appendChild(div);
+        };
+
+        window.loadMainLogo = (event) => {
+            const reader = new FileReader();
+            reader.onload = () => { uploadedMainLogo = reader.result; document.getElementById('ticket-logo').src = reader.result; };
+            reader.readAsDataURL(event.target.files[0]);
+        };
+
+        window.loadSubLogo = (event) => {
+            const reader = new FileReader();
+            reader.onload = () => { 
+                uploadedSubLogo = reader.result; 
+                document.querySelectorAll('.sub-icon').forEach(img => {
+                    img.src = reader.result; 
+                    img.style.filter = "none"; 
+                }); 
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        };
+
+        window.exportPDF = () => {
+            if (document.activeElement) { document.activeElement.blur(); }
+            window.getSelection().removeAllRanges();
+            
+            const container = document.getElementById('ticket-content');
+            
+            const firstPax = document.querySelector('.pax-name') ? document.querySelector('.pax-name').innerText.trim() : "KHÁCH ẨN DANH";
+            const pnrCode = document.getElementById('pnr-val').innerText.trim();
+            const typeAir = document.getElementById('airline-select').value;
+            const opName = configs[typeAir].op;
+
+            const firstCard = document.querySelector('.flight-card-ticket');
+            const fromCode = firstCard ? firstCard.querySelector('.airport-src-code').innerText.trim() : 'SGN';
+            const toCode = firstCard ? firstCard.querySelector('.airport-dest-code').innerText.trim() : 'HAN';
+            const departDate = firstCard ? firstCard.querySelector('.flight-date-txt').innerText.trim() : '...';
+
+            const ticketCloudObj = {
+                passengerName: firstPax.toUpperCase(),
+                pnr: pnrCode.toUpperCase(),
+                airline: opName,
+                fromAir: fromCode.toUpperCase(),
+                toAir: toCode.toUpperCase(),
+                departureDate: departDate,
+                time: window.getVNTime(),
+                createdAt: Date.now()
+            };
+
+            window.saveTicketToSecondaryCloud(ticketCloudObj);
+
+            const deleteButtons = document.querySelectorAll('.pax-del-btn-ticket, .remove-btn-ticket');
+            deleteButtons.forEach(btn => btn.classList.add('hide-on-print-ticket'));
+
+            const originalTransform = container.style.transform;
+            container.style.transform = 'none'; 
+            document.body.style.pointerEvents = 'none';
+
+            setTimeout(() => {
+                let fileName = `${firstPax}_${pnrCode}.pdf`;
+                const currentHeight = container.scrollHeight;
+                const targetHeight = 1123;
+                
+                if (currentHeight > targetHeight) {
+                    const scaleRatio = targetHeight / currentHeight;
+                    container.style.transform = `scale(${scaleRatio})`;
+                }
+
+                const opt = {
+                    margin: 0,
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 1.0 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(container).save().then(() => {
+                    container.style.transform = originalTransform; 
+                    deleteButtons.forEach(btn => btn.classList.remove('hide-on-print-ticket'));
+                    document.body.style.pointerEvents = 'auto';
+                    window.showToast("Xuất bản PDF và lưu lịch sử thành công!", "success");
+                }).catch((err) => {
+                    console.error(err);
+                    container.style.transform = originalTransform;
+                    deleteButtons.forEach(btn => btn.classList.remove('hide-on-print-ticket'));
+                    document.body.style.pointerEvents = 'auto';
+                });
+            }, 400);
+        };
 
         setInterval(() => { 
             const now = new Date();
