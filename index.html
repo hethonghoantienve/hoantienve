@@ -126,6 +126,32 @@
     }
     input:focus, select:focus, textarea:focus { border-color: #072a4d; }
 
+    /* CÔNG TẮC BẬT TẮT GHẾ & HÀNH LÝ */
+    .toggle-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .toggle-card {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toggle-card span { font-size: 0.78rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px; }
+    .toggle-card input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
+
+    .help-hint {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 3px;
+      display: block;
+    }
+
     .action-btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
     .action-btn-subgroup { display: flex; gap: 8px; }
     .btn {
@@ -256,6 +282,7 @@
     }
     .pax-table tr:nth-child(even) { background: #f8fafc; }
     .pax-stt { width: 32px; text-align: center; }
+    .pax-seat-col { text-align: center; width: 90px; font-weight: 800; color: #00467f; }
 
     /* KHUNG THÔNG TIN CHẶNG BAY */
     .flight-segment-block {
@@ -277,7 +304,7 @@
     }
     .flight-info-grid {
       display: grid;
-      grid-template-columns: 110px 1fr;
+      grid-template-columns: 130px 1fr;
       row-gap: 2px;
       column-gap: 8px;
       font-size: 0.88rem;
@@ -330,7 +357,7 @@
     <div class="paste-zone" id="pasteZone">
       <i class="fa-solid fa-paste"></i>
       <p id="pasteStatusText">BẤM VÀO ĐÂY & NHẤN CTRL + V ĐỂ DÁN ẢNH ĐẶT CHỖ</p>
-      <span>AI tự động trích xuất PNR, tên khách, ngày giờ, số hiệu bay</span>
+      <span>AI tự động trích xuất PNR, tên khách, ghế, hành lý, tàu bay, ngày giờ bay</span>
       <input type="file" id="fileInput" accept="image/*">
       
       <!-- LOADING AI -->
@@ -377,13 +404,32 @@
       </div>
     </div>
 
+    <!-- CÔNG TẮC BẬT TẮT GHẾ & HÀNH LÝ (AI TỰ ĐỘNG BẬT KHI ĐỌC ĐƯỢC) -->
+    <div class="toggle-row">
+      <div class="toggle-card">
+        <span><i class="fa-solid fa-chair" style="color: #0284c7;"></i> Cột số ghế</span>
+        <input type="checkbox" id="showSeatCheckbox" onchange="toggleSeatColumn(this.checked)">
+      </div>
+      <div class="toggle-card">
+        <span><i class="fa-solid fa-suitcase-rolling" style="color: #d97706;"></i> Dòng hành lý</span>
+        <input type="checkbox" id="showBaggageCheckbox" onchange="toggleBaggage(this.checked)">
+      </div>
+    </div>
+
+    <!-- Ô NHẬP HÀNH LÝ NHANH -->
+    <div class="form-group" id="baggageInputBox" style="display: none;">
+      <label><i class="fa-solid fa-suitcase" style="color: #d97706;"></i> Chi tiết Hành lý áp dụng cho các chặng</label>
+      <input type="text" id="baggageTextInput" value="Xách tay: 12kg (2 kiện) | Ký gửi: 23kg (1 kiện)" oninput="onBaggageTextChange(this.value)">
+    </div>
+
     <!-- DANH SÁCH KHÁCH -->
     <div class="form-group">
-      <label>Danh Sách Khách (Mỗi người 1 dòng: Tên | Phân loại)</label>
-      <textarea id="paxListInput" rows="4" oninput="onPaxListChange()">NINH HOANG YEN | Người lớn / Adult
+      <label>Danh Sách Khách (Mỗi người 1 dòng: Tên | Phân loại | Ghế nếu có)</label>
+      <textarea id="paxListInput" rows="4" oninput="onPaxListChange()">NINH HOANG YEN | Người lớn / Adult | 15A
 CAMILLERI THUY | Người lớn / Adult
-NGUYEN THI THANH VAN | Người cao tuổi / Senior
+NGUYEN THI THANH VAN | Người cao tuổi / Senior | 15C
 NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
+      <span class="help-hint">💡 Khi dán ảnh: Nếu ảnh có ghế/hành lý, AI sẽ tự động điền và bật công tắc tương ứng.</span>
     </div>
 
     <div class="action-btn-group">
@@ -406,7 +452,6 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
       <div class="ticket-header" id="ticketHeader">
         <div class="brand-left">
           <div class="airline-logo-title">
-            <!-- VÙNG HIỆN LOGO HÃNG -->
             <div class="airline-logo-box" id="viewLogoBox">
               <svg id="defaultSenSvg" viewBox="0 0 140 40" fill="none">
                 <path d="M20 2 C22 12 30 20 38 25 C27 27 16 21 12 13 C14 9 17 5 20 2 Z" fill="#F5C542"/>
@@ -415,7 +460,6 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
               </svg>
               <img id="customLogoImg" src="" alt="Airline Logo" style="display: none;">
             </div>
-            <!-- DÒNG CHỮ TÊN HÃNG (TỰ ĐỘNG ẨN KHI TẢI LOGO LÊN) -->
             <span id="viewAirlineName">Vietnam Airlines</span>
           </div>
           <div>
@@ -434,21 +478,22 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
       <!-- BODY MẶT VÉ -->
       <div class="ticket-body">
         
-        <!-- BẢNG HÀNH KHÁCH -->
+        <!-- BẢNG HÀNH KHÁCH (CÓ THỂ ẨN/HIỆN CỘT GHẾ) -->
         <div class="sec-heading">Danh sách hành khách</div>
         <table class="pax-table">
           <thead>
-            <tr>
+            <tr id="paxTableHeaderRow">
               <th class="pax-stt"></th>
               <th>Hành khách</th>
               <th>Phân loại khách</th>
+              <th id="thSeat" class="pax-seat-col" style="display: none;">Số ghế</th>
               <th>Trạng thái</th>
             </tr>
           </thead>
           <tbody id="paxTableBody"></tbody>
         </table>
 
-        <!-- CHẶNG BAY -->
+        <!-- CHẶNG BAY (CÓ THỂ ẨN/HIỆN HÀNH LÝ) -->
         <div id="flightLegsContainer"></div>
 
         <!-- FOOTER & QR CODE -->
@@ -479,6 +524,8 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
 
 <script>
   let customLogoBase64 = "";
+  let isShowSeat = false;       // Mặc định tắt ghế
+  let isShowBaggage = false;    // Mặc định tắt hành lý
 
   let ticketData = {
     airline: "Vietnam Airlines",
@@ -486,10 +533,10 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     statusMode: "PAID",
     customStatusText: "ĐÃ THANH TOÁN (PAID)<br>ĐÃ XUẤT VÉ / TICKETED",
     passengers: [
-      { name: "NINH HOANG YEN", type: "Người lớn / Adult", status: "Đã xác nhận / Confirmed" },
-      { name: "CAMILLERI THUY", type: "Người lớn / Adult", status: "Đã xác nhận / Confirmed" },
-      { name: "NGUYEN THI THANH VAN", type: "Người cao tuổi / Senior", status: "Đã xác nhận / Confirmed" },
-      { name: "NGUYEN RYAN THIEN TRI", type: "Trẻ em / Child", status: "Đã xác nhận / Confirmed" }
+      { name: "NINH HOANG YEN", type: "Người lớn / Adult", seat: "15A", status: "Đã xác nhận / Confirmed" },
+      { name: "CAMILLERI THUY", type: "Người lớn / Adult", seat: "--", status: "Đã xác nhận / Confirmed" },
+      { name: "NGUYEN THI THANH VAN", type: "Người cao tuổi / Senior", seat: "15C", status: "Đã xác nhận / Confirmed" },
+      { name: "NGUYEN RYAN THIEN TRI", type: "Trẻ em / Child", seat: "--", status: "Đã xác nhận / Confirmed" }
     ],
     legs: [
       {
@@ -497,6 +544,8 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
         routeTitle: "MELBOURNE (MEL) đến TP. HỒ CHÍ MINH (SGN)",
         date: "Thứ Ba, 03/11/2026 (Tuesday, Nov 3, 2026)",
         flightNo: "VN 780 | Khai thác bởi Vietnam Airlines",
+        aircraft: "Airbus A350-900",
+        baggage: "Xách tay: 12kg (2 kiện) | Ký gửi: 23kg (1 kiện)",
         depart: "11:25 - Sân bay Melbourne (MEL), Nhà ga 2",
         arrive: "15:45 - Sân bay Tân Sơn Nhất (SGN), Nhà ga 2",
         duration: "8h 20m (Bay thẳng / Non-stop)",
@@ -507,6 +556,8 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
         routeTitle: "TP. HỒ CHÍ MINH (SGN) đến MELBOURNE (MEL)",
         date: "Thứ Hai, 16/11/2026 (Monday, Nov 16, 2026)",
         flightNo: "VN 781 | Khai thác bởi Vietnam Airlines",
+        aircraft: "Airbus A350-900",
+        baggage: "Xách tay: 12kg (2 kiện) | Ký gửi: 23kg (1 kiện)",
         depart: "21:05 - Sân bay Tân Sơn Nhất (SGN), Nhà ga 2",
         arrive: "09:25 (+1 ngày) - Sân bay Melbourne (MEL), Nhà ga 2",
         duration: "8h 20m (Bay thẳng / Non-stop)",
@@ -525,7 +576,26 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     renderTicket();
   });
 
-  // TẢI ẢNH LOGO LÊN: TỰ ĐỘNG ẨN CHỮ TÊN HÃNG
+  function toggleSeatColumn(checked) {
+    isShowSeat = checked;
+    document.getElementById('showSeatCheckbox').checked = checked;
+    renderTicket();
+  }
+
+  function toggleBaggage(checked) {
+    isShowBaggage = checked;
+    document.getElementById('showBaggageCheckbox').checked = checked;
+    document.getElementById('baggageInputBox').style.display = checked ? 'block' : 'none';
+    renderTicket();
+  }
+
+  function onBaggageTextChange(val) {
+    ticketData.legs.forEach(leg => {
+      leg.baggage = val.trim();
+    });
+    renderTicket();
+  }
+
   function handleLogoUpload(input) {
     if (input.files && input.files[0]) {
       const reader = new FileReader();
@@ -537,14 +607,12 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     }
   }
 
-  // KHÔI PHỤC LOGO: HIỂN THỊ LẠI CHỮ TÊN HÃNG
   function resetDefaultLogo() {
     customLogoBase64 = "";
     document.getElementById('logoFileInput').value = "";
     renderTicket();
   }
 
-  // ĐỔI TRẠNG THÁI THANH TOÁN
   function onStatusSelectChange(val) {
     const customInput = document.getElementById('statusCustomInput');
     if (val === 'CUSTOM') {
@@ -567,6 +635,7 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
       return {
         name: (parts[0] || '').trim(),
         type: (parts[1] || 'Người lớn / Adult').trim(),
+        seat: parts[2] ? parts[2].trim() : '--',
         status: 'Đã xác nhận / Confirmed'
       };
     }).filter(p => p.name.length > 0);
@@ -583,47 +652,50 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     document.getElementById('viewPNR').innerText = pnr;
     document.getElementById('viewQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${pnr}`;
 
-    // XỬ LÝ LOGO VÀ DÒNG CHỮ TÊN HÃNG
     const defaultSenSvg = document.getElementById('defaultSenSvg');
     const customLogoImg = document.getElementById('customLogoImg');
     const viewAirlineName = document.getElementById('viewAirlineName');
 
     if (customLogoBase64) {
-      // Khi đã tải logo lên: Hiện ảnh logo và ẨN chữ tên hãng đi
       customLogoImg.src = customLogoBase64;
       customLogoImg.style.display = 'block';
       defaultSenSvg.style.display = 'none';
       viewAirlineName.style.display = 'none';
     } else {
-      // Khi không có logo tải lên: Hiện logo sen vàng mặc định và hiện chữ tên hãng
       customLogoImg.style.display = 'none';
       defaultSenSvg.style.display = 'block';
       viewAirlineName.innerText = airline;
       viewAirlineName.style.display = 'inline';
     }
 
-    // Cập nhật trạng thái
     const statusRow = document.getElementById('viewStatusRow');
     const noteStatus = document.getElementById('viewNoteStatus');
     statusRow.innerHTML = statusText;
 
     if (statusMode === 'HOLD') {
-      statusRow.style.color = '#fde047'; // Vàng cam giữ chỗ
+      statusRow.style.color = '#fde047';
       noteStatus.innerText = 'ĐANG GIỮ CHỖ TẠM THỜI';
     } else {
-      statusRow.style.color = '#4ade80'; // Xanh lá đã thanh toán
+      statusRow.style.color = '#4ade80';
       noteStatus.innerText = 'ĐÃ THANH TOÁN THÀNH CÔNG';
     }
 
-    // Render Bảng khách
+    // XỬ LÝ ẨN / HIỆN CỘT GHẾ NGỒI
+    const thSeat = document.getElementById('thSeat');
+    thSeat.style.display = isShowSeat ? '' : 'none';
+
+    // Render bảng khách
     const paxTbody = document.getElementById('paxTableBody');
     paxTbody.innerHTML = '';
     ticketData.passengers.forEach((pax, idx) => {
       const tr = document.createElement('tr');
+      const seatDisplay = pax.seat && pax.seat !== '--' ? pax.seat : '--';
+      
       tr.innerHTML = `
         <td class="pax-stt">${idx + 1}.</td>
         <td><strong>${pax.name}</strong></td>
         <td>${pax.type}</td>
+        ${isShowSeat ? `<td class="pax-seat-col">${seatDisplay}</td>` : ''}
         <td>${pax.status || 'Đã xác nhận / Confirmed'}</td>
       `;
       paxTbody.appendChild(tr);
@@ -635,6 +707,12 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     ticketData.legs.forEach(leg => {
       const div = document.createElement('div');
       div.className = 'flight-segment-block';
+      
+      const baggageHtml = isShowBaggage ? `
+        <div class="lbl">Hành lý:</div>
+        <div class="val" style="color: #00467f;">${leg.baggage || 'Theo tiêu chuẩn hạng vé'}</div>
+      ` : '';
+
       div.innerHTML = `
         <div class="seg-header-title">
           <i class="fa-solid fa-plane-departure" style="font-size:0.85rem;"></i>
@@ -646,6 +724,8 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
         <div class="flight-info-grid">
           <div class="lbl">Ngày:</div><div class="val">${leg.date}</div>
           <div class="lbl">Chuyến bay:</div><div class="val">${leg.flightNo}</div>
+          <div class="lbl">Tàu bay:</div><div class="val">${leg.aircraft || 'Airbus / Boeing'}</div>
+          ${baggageHtml}
           <div class="lbl">Khởi hành:</div><div class="val">${leg.depart}</div>
           <div class="lbl">Đến nơi:</div><div class="val">${leg.arrive}</div>
           <div class="lbl">Thời gian bay:</div><div class="val">${leg.duration}</div>
@@ -656,7 +736,7 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     });
   }
 
-  // NÉN ẢNH GỬI AI
+  // NÉN ẢNH
   function compressImageFast(file) {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -682,7 +762,7 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     });
   }
 
-  // GỌI GEMINI AI BÓC TÁCH E-TICKET
+  // GỌI GEMINI AI: Bóc tách cả Ghế và Hành lý
   async function callGeminiTicketAI(base64Data, mimeType) {
     const apiKey = document.getElementById('geminiApiKey').value.trim() || localStorage.getItem('my_gemini_api_key');
     if (!apiKey) {
@@ -697,14 +777,22 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
   "pnr": "Mã đặt chỗ 6 ký tự (ví dụ: 549UHF)",
   "statusMode": "PAID hoặc HOLD",
   "passengers": [
-    { "name": "HỌ VÀ TÊN KHÁCH (IN HOA)", "type": "Người lớn / Adult hoặc Trẻ em / Child hoặc Em bé / Infant", "status": "Đã xác nhận / Confirmed" }
+    { 
+      "name": "HỌ VÀ TÊN KHÁCH (IN HOA)", 
+      "type": "Người lớn / Adult hoặc Trẻ em / Child hoặc Em bé / Infant",
+      "seat": "Số ghế nếu có trên ảnh (ví dụ: 15A), nếu không có ghi rỗng ''"
+    }
   ],
+  "hasBaggage": true/false (true nếu trên ảnh có ghi rõ thông tin hành lý xách tay hoặc ký gửi),
+  "hasSeat": true/false (true nếu trên ảnh có hiển thị số ghế của khách),
   "legs": [
     {
       "badge": "Chiều đi (Outbound) hoặc Chiều về (Inbound)",
       "routeTitle": "ĐIỂM ĐI (MÃ) đến ĐIỂM ĐẾN (MÃ)",
       "date": "Ngày bay chi tiết",
       "flightNo": "Số hiệu chuyến bay kèm hãng khai thác",
+      "aircraft": "Loại tàu bay nếu có (ví dụ: Airbus A321, Boeing 787-9...)",
+      "baggage": "Chi tiết hành lý nếu có (ví dụ: Xách tay 7kg | Ký gửi 20kg), nếu không có để rỗng ''",
       "depart": "Giờ - Tên sân bay đi (MÃ), Nhà ga...",
       "arrive": "Giờ - Tên sân bay đến (MÃ), Nhà ga...",
       "duration": "Thời gian bay (Bay thẳng / Non-stop hoặc nối chuyến)",
@@ -747,20 +835,17 @@ Chỉ trả về JSON thuần túy, không có văn bản giải thích.`;
     const loadingBox = document.getElementById('aiLoadingBox');
     const pasteStatus = document.getElementById('pasteStatusText');
     loadingBox.style.display = 'block';
-    pasteStatus.innerHTML = `<i class="fa-solid fa-bolt fa-bounce" style="color: #f59e0b;"></i> Đang đọc mã đặt chỗ & danh sách khách...`;
+    pasteStatus.innerHTML = `<i class="fa-solid fa-bolt fa-bounce" style="color: #f59e0b;"></i> Đang đọc mã PNR, tàu bay, ghế, hành lý & khách...`;
 
     try {
       const { mimeType, base64Data } = await compressImageFast(file);
       const result = await callGeminiTicketAI(base64Data, mimeType);
       if (!result) return;
 
-      console.log("KẾT QUẢ AI BÓC TÁCH:", result);
-
       ticketData = result;
       document.getElementById('pnrInput').value = result.pnr || "549UHF";
       document.getElementById('airlineNameInput').value = result.airline || "Vietnam Airlines";
 
-      // Trạng thái vé
       if (result.statusMode === 'HOLD') {
         document.getElementById('statusSelect').value = 'HOLD';
         document.getElementById('statusCustomInput').value = "ĐANG GIỮ CHỖ (HOLDING)<br>CHỜ THANH TOÁN";
@@ -769,10 +854,37 @@ Chỉ trả về JSON thuần túy, không có văn bản giải thích.`;
         document.getElementById('statusCustomInput').value = "ĐÃ THANH TOÁN (PAID)<br>ĐÃ XUẤT VÉ / TICKETED";
       }
       
-      // Đồng bộ textarea khách
+      // KIỂM TRA TỰ ĐỘNG BẬT CỘT GHẾ: Nếu có ít nhất 1 khách có số ghế
+      let hasAnySeat = false;
       let paxStr = "";
-      (result.passengers || []).forEach(p => { paxStr += `${p.name} | ${p.type}\n`; });
+      (result.passengers || []).forEach(p => { 
+        const seatVal = p.seat && p.seat.trim() !== '' ? p.seat.trim() : '';
+        if (seatVal) {
+          hasAnySeat = true;
+          paxStr += `${p.name} | ${p.type} | ${seatVal}\n`;
+        } else {
+          paxStr += `${p.name} | ${p.type}\n`;
+        }
+      });
       document.getElementById('paxListInput').value = paxStr.trim();
+
+      // Cập nhật công tắc ghế tự động theo kết quả AI
+      toggleSeatColumn(hasAnySeat || !!result.hasSeat);
+
+      // KIỂM TRA TỰ ĐỘNG BẬT HÀNH LÝ
+      let hasBaggageInfo = false;
+      if (result.legs && result.legs[0] && result.legs[0].baggage && result.legs[0].baggage.trim() !== '') {
+        hasBaggageInfo = true;
+        document.getElementById('baggageTextInput').value = result.legs[0].baggage;
+      }
+      toggleBaggage(hasBaggageInfo || !!result.hasBaggage);
+
+      ticketData.passengers = (result.passengers || []).map(p => ({
+        name: p.name,
+        type: p.type,
+        seat: p.seat && p.seat.trim() !== '' ? p.seat : '--',
+        status: 'Đã xác nhận / Confirmed'
+      }));
 
       pasteStatus.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #16a34a;"></i> ĐÃ TẠO MẶT VÉ THÀNH CÔNG!`;
       loadingBox.style.display = 'none';
