@@ -113,6 +113,60 @@
       cursor: pointer;
     }
 
+    /* KHỐI HÀNH LÝ & NÚT GẠT (TOGGLE) */
+    .baggage-config-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+    }
+    .baggage-header-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .baggage-header-toggle label {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #072a4d;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 0;
+      cursor: pointer;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background-color: #cbd5e1;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: #00467f; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
     .form-group { margin-bottom: 10px; }
     .form-group label { display: block; font-size: 0.74rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -354,6 +408,25 @@
       </div>
     </div>
 
+    <!-- KHỐI CẤU HÌNH HÀNH LÝ ĐIỀN TAY & NÚT GẠT -->
+    <div class="baggage-config-box">
+      <div class="baggage-header-toggle">
+        <label for="toggleBaggage">
+          <i class="fa-solid fa-suitcase-rolling" style="color: #00467f;"></i> Hiển thị hành lý trên vé
+        </label>
+        <label class="switch">
+          <input type="checkbox" id="toggleBaggage" checked onchange="onToggleBaggageChange()">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="baggageInputContainer">
+        <div class="form-group" style="margin-bottom: 0;">
+          <input type="text" id="baggageDefaultInput" value="23kg ký gửi + 12kg xách tay" placeholder="VD: 20kg ký gửi / 7kg xách tay" oninput="onBaggageDefaultChange()">
+          <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">Mẹo: Áp dụng chung cho tất cả khách, hoặc điền riêng ở ô danh sách khách.</span>
+        </div>
+      </div>
+    </div>
+
     <!-- KHỐI SỬA TRẠNG THÁI THANH TOÁN -->
     <div class="form-group">
       <label><i class="fa-solid fa-file-invoice-dollar" style="color: #16a34a;"></i> Trạng Thái Vé</label>
@@ -379,11 +452,11 @@
 
     <!-- DANH SÁCH KHÁCH -->
     <div class="form-group">
-      <label>Danh Sách Khách (Mỗi người 1 dòng: Tên | Phân loại)</label>
-      <textarea id="paxListInput" rows="4" oninput="onPaxListChange()">NINH HOANG YEN | Người lớn / Adult
-CAMILLERI THUY | Người lớn / Adult
-NGUYEN THI THANH VAN | Người cao tuổi / Senior
-NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
+      <label>Danh Sách Khách (Tên | Loại khách | Hành lý riêng)</label>
+      <textarea id="paxListInput" rows="4" oninput="onPaxListChange()">NINH HOANG YEN | Người lớn / Adult | 23kg ký gửi + 12kg xách tay
+CAMILLERI THUY | Người lớn / Adult | 23kg ký gửi + 12kg xách tay
+NGUYEN THI THANH VAN | Người cao tuổi / Senior | 23kg ký gửi + 12kg xách tay
+NGUYEN RYAN THIEN TRI | Trẻ em / Child | 23kg ký gửi + 12kg xách tay</textarea>
     </div>
 
     <div class="action-btn-group">
@@ -438,10 +511,11 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
         <div class="sec-heading">Danh sách hành khách</div>
         <table class="pax-table">
           <thead>
-            <tr>
+            <tr id="paxTableHeaderRow">
               <th class="pax-stt"></th>
               <th>Hành khách</th>
               <th>Phân loại khách</th>
+              <th id="thBaggage">Hành lý</th>
               <th>Trạng thái</th>
             </tr>
           </thead>
@@ -484,12 +558,14 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     airline: "Vietnam Airlines",
     pnr: "549UHF",
     statusMode: "PAID",
+    showBaggage: true,
+    defaultBaggage: "23kg ký gửi + 12kg xách tay",
     customStatusText: "ĐÃ THANH TOÁN (PAID)<br>ĐÃ XUẤT VÉ / TICKETED",
     passengers: [
-      { name: "NINH HOANG YEN", type: "Người lớn / Adult", status: "Đã xác nhận / Confirmed" },
-      { name: "CAMILLERI THUY", type: "Người lớn / Adult", status: "Đã xác nhận / Confirmed" },
-      { name: "NGUYEN THI THANH VAN", type: "Người cao tuổi / Senior", status: "Đã xác nhận / Confirmed" },
-      { name: "NGUYEN RYAN THIEN TRI", type: "Trẻ em / Child", status: "Đã xác nhận / Confirmed" }
+      { name: "NINH HOANG YEN", type: "Người lớn / Adult", baggage: "23kg ký gửi + 12kg xách tay", status: "Đã xác nhận / Confirmed" },
+      { name: "CAMILLERI THUY", type: "Người lớn / Adult", baggage: "23kg ký gửi + 12kg xách tay", status: "Đã xác nhận / Confirmed" },
+      { name: "NGUYEN THI THANH VAN", type: "Người cao tuổi / Senior", baggage: "23kg ký gửi + 12kg xách tay", status: "Đã xác nhận / Confirmed" },
+      { name: "NGUYEN RYAN THIEN TRI", type: "Trẻ em / Child", baggage: "23kg ký gửi + 12kg xách tay", status: "Đã xác nhận / Confirmed" }
     ],
     legs: [
       {
@@ -524,6 +600,21 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     if (savedKey) document.getElementById('geminiApiKey').value = savedKey;
     renderTicket();
   });
+
+  // XỬ LÝ NÚT GẠT BẬT/TẮT HÀNH LÝ
+  function onToggleBaggageChange() {
+    ticketData.showBaggage = document.getElementById('toggleBaggage').checked;
+    const baggageBox = document.getElementById('baggageInputContainer');
+    baggageBox.style.display = ticketData.showBaggage ? 'block' : 'none';
+    renderTicket();
+  }
+
+  // ĐIỀN TAY HÀNH LÝ MẶC ĐỊNH
+  function onBaggageDefaultChange() {
+    const val = document.getElementById('baggageDefaultInput').value.trim();
+    ticketData.defaultBaggage = val;
+    onPaxListChange();
+  }
 
   // TẢI ẢNH LOGO LÊN: TỰ ĐỘNG ẨN CHỮ TÊN HÃNG
   function handleLogoUpload(input) {
@@ -561,12 +652,14 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
   }
 
   function onPaxListChange() {
+    const defaultBag = document.getElementById('baggageDefaultInput').value.trim();
     const lines = document.getElementById('paxListInput').value.trim().split('\n');
     ticketData.passengers = lines.map(line => {
       const parts = line.split('|');
       return {
         name: (parts[0] || '').trim(),
         type: (parts[1] || 'Người lớn / Adult').trim(),
+        baggage: parts[2] ? parts[2].trim() : defaultBag,
         status: 'Đã xác nhận / Confirmed'
       };
     }).filter(p => p.name.length > 0);
@@ -579,6 +672,7 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     const airline = document.getElementById('airlineNameInput').value.trim() || "Vietnam Airlines";
     const statusMode = document.getElementById('statusSelect').value;
     const statusText = document.getElementById('statusCustomInput').value;
+    const showBaggage = document.getElementById('toggleBaggage').checked;
 
     document.getElementById('viewPNR').innerText = pnr;
     document.getElementById('viewQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${pnr}`;
@@ -589,13 +683,11 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     const viewAirlineName = document.getElementById('viewAirlineName');
 
     if (customLogoBase64) {
-      // Khi đã tải logo lên: Hiện ảnh logo và ẨN chữ tên hãng đi
       customLogoImg.src = customLogoBase64;
       customLogoImg.style.display = 'block';
       defaultSenSvg.style.display = 'none';
       viewAirlineName.style.display = 'none';
     } else {
-      // Khi không có logo tải lên: Hiện logo sen vàng mặc định và hiện chữ tên hãng
       customLogoImg.style.display = 'none';
       defaultSenSvg.style.display = 'block';
       viewAirlineName.innerText = airline;
@@ -608,11 +700,17 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     statusRow.innerHTML = statusText;
 
     if (statusMode === 'HOLD') {
-      statusRow.style.color = '#fde047'; // Vàng cam giữ chỗ
+      statusRow.style.color = '#fde047';
       noteStatus.innerText = 'ĐANG GIỮ CHỖ TẠM THỜI';
     } else {
-      statusRow.style.color = '#4ade80'; // Xanh lá đã thanh toán
+      statusRow.style.color = '#4ade80';
       noteStatus.innerText = 'ĐÃ THANH TOÁN THÀNH CÔNG';
+    }
+
+    // Cập nhật Cột tiêu đề bảng khách
+    const thBaggage = document.getElementById('thBaggage');
+    if (thBaggage) {
+      thBaggage.style.display = showBaggage ? '' : 'none';
     }
 
     // Render Bảng khách
@@ -620,10 +718,12 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
     paxTbody.innerHTML = '';
     ticketData.passengers.forEach((pax, idx) => {
       const tr = document.createElement('tr');
+      const bagCell = showBaggage ? `<td>${pax.baggage || document.getElementById('baggageDefaultInput').value.trim() || '20kg'}</td>` : '';
       tr.innerHTML = `
         <td class="pax-stt">${idx + 1}.</td>
         <td><strong>${pax.name}</strong></td>
         <td>${pax.type}</td>
+        ${bagCell}
         <td>${pax.status || 'Đã xác nhận / Confirmed'}</td>
       `;
       paxTbody.appendChild(tr);
@@ -696,8 +796,9 @@ NGUYEN RYAN THIEN TRI | Trẻ em / Child</textarea>
   "airline": "Tên hãng (ví dụ: Vietnam Airlines, VietJet Air...)",
   "pnr": "Mã đặt chỗ 6 ký tự (ví dụ: 549UHF)",
   "statusMode": "PAID hoặc HOLD",
+  "baggage": "Thông tin hành lý nếu có (VD: 20kg ký gửi + 7kg xách tay)",
   "passengers": [
-    { "name": "HỌ VÀ TÊN KHÁCH (IN HOA)", "type": "Người lớn / Adult hoặc Trẻ em / Child hoặc Em bé / Infant", "status": "Đã xác nhận / Confirmed" }
+    { "name": "HỌ VÀ TÊN KHÁCH (IN HOA)", "type": "Người lớn / Adult hoặc Trẻ em / Child hoặc Em bé / Infant", "baggage": "Hành lý riêng của khách (nếu có)", "status": "Đã xác nhận / Confirmed" }
   ],
   "legs": [
     {
@@ -756,9 +857,13 @@ Chỉ trả về JSON thuần túy, không có văn bản giải thích.`;
 
       console.log("KẾT QUẢ AI BÓC TÁCH:", result);
 
-      ticketData = result;
+      ticketData = { ...ticketData, ...result };
       document.getElementById('pnrInput').value = result.pnr || "549UHF";
       document.getElementById('airlineNameInput').value = result.airline || "Vietnam Airlines";
+
+      if (result.baggage) {
+        document.getElementById('baggageDefaultInput').value = result.baggage;
+      }
 
       // Trạng thái vé
       if (result.statusMode === 'HOLD') {
@@ -770,8 +875,12 @@ Chỉ trả về JSON thuần túy, không có văn bản giải thích.`;
       }
       
       // Đồng bộ textarea khách
+      let defaultBag = document.getElementById('baggageDefaultInput').value.trim();
       let paxStr = "";
-      (result.passengers || []).forEach(p => { paxStr += `${p.name} | ${p.type}\n`; });
+      (result.passengers || []).forEach(p => { 
+        const b = p.baggage || defaultBag;
+        paxStr += `${p.name} | ${p.type} | ${b}\n`; 
+      });
       document.getElementById('paxListInput').value = paxStr.trim();
 
       pasteStatus.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #16a34a;"></i> ĐÃ TẠO MẶT VÉ THÀNH CÔNG!`;
